@@ -10,6 +10,8 @@ import de.labystudio.game.util.EnumBlockFace;
 import de.labystudio.game.util.HitResult;
 import de.labystudio.game.util.Timer;
 import de.labystudio.game.world.Block;
+import de.labystudio.game.world.World;
+import de.labystudio.game.world.WorldRenderer;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
@@ -18,9 +20,6 @@ import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.util.glu.GLU;
-
-import de.labystudio.game.world.World;
-import de.labystudio.game.world.WorldRenderer;
 
 public class Game implements Runnable {
     private static final boolean FULLSCREEN_MODE = false;

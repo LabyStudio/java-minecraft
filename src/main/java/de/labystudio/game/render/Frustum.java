@@ -3,9 +3,10 @@ package de.labystudio.game.render;
 import java.nio.FloatBuffer;
 
 import de.labystudio.game.world.chunk.Chunk;
-import de.labystudio.game.util.AABB;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
+
+import de.labystudio.game.util.AABB;
 
 public class Frustum {
     public float[][] m_Frustum = new float[6][4];
