@@ -4,7 +4,6 @@ import org.lwjgl.LWJGLException;
 import org.lwjgl.opengl.Display;
 
 import java.awt.*;
-import java.awt.event.ComponentEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
@@ -13,16 +12,20 @@ public class GameWindow {
     public static final int DEFAULT_WIDTH = 854;
     public static final int DEFAULT_HEIGHT = 480;
 
+    private final Game game;
+
     protected final Canvas canvas;
     protected final Frame frame;
 
     protected boolean fullscreen;
     protected boolean enableVsync;
 
-    protected int displayWidth;
-    protected int displayHeight;
+    public int displayWidth = DEFAULT_WIDTH;
+    public int displayHeight = DEFAULT_HEIGHT;
 
-    public GameWindow() {
+    public GameWindow(Game game) {
+        this.game = game;
+
         // Create canvas
         this.canvas = new Canvas();
         this.canvas.setPreferredSize(new Dimension(DEFAULT_WIDTH, DEFAULT_HEIGHT));
@@ -144,6 +147,8 @@ public class GameWindow {
 
         this.displayWidth = width;
         this.displayHeight = height;
+
+        this.game.gui.init(this);
     }
 
     public void destroy() {

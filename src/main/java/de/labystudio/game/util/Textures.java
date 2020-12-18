@@ -12,7 +12,7 @@ import java.nio.IntBuffer;
 import java.util.HashMap;
 
 public class Textures {
-    private static HashMap<String, Integer> idMap = new HashMap();
+    private static final HashMap<String, Integer> idMap = new HashMap();
     private static int lastId = -9999999;
 
     public static int loadTexture(String resourceName, int mode) {

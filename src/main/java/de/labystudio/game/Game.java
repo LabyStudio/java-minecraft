@@ -10,7 +10,6 @@ import de.labystudio.game.world.Block;
 import de.labystudio.game.world.World;
 import de.labystudio.game.world.WorldRenderer;
 import de.labystudio.game.world.chunk.Chunk;
-import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
@@ -18,54 +17,34 @@ import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.util.glu.GLU;
 
-import java.nio.FloatBuffer;
-
 public class Game implements Runnable {
 
-    private GameWindow gameWindow = new GameWindow();
+    private final GameWindow gameWindow = new GameWindow(this);
+    protected final Gui gui = new Gui();
 
-    // Stuff
-    private FloatBuffer fogColor = BufferUtils.createFloatBuffer(4);
-    private Timer timer = new Timer(20.0F);
+    // Game
+    private final Timer timer = new Timer(20.0F);
     private World world;
     private WorldRenderer worldRenderer;
     private Player player;
 
+    // States
     private boolean paused = false;
-
-    private HitResult hitResult = null;
 
     public void init() throws LWJGLException {
         // Setup display
         this.gameWindow.init();
+        this.gui.init(this.gameWindow);
+        this.gui.loadTextures();
 
-        Keyboard.create();
-        Mouse.create();
-
-        int col = 920330;
-        float fr = 0.0F;
-        float fg = 0.0F;
-        float fb = 0.0F;
-        this.fogColor.put(
-                new float[]{(col >> 16 & 0xFF) / 255.0F, (col >> 8 & 0xFF) / 255.0F, (col & 0xFF) / 255.0F, 1.0F});
-        this.fogColor.flip();
-
-        GL11.glEnable(GL11.GL_TEXTURE_2D);
-        GL11.glShadeModel(GL11.GL_SMOOTH);
-        GL11.glClearColor(fr, fg, fb, 0.0F);
-        GL11.glClearDepth(1.0D);
-        GL11.glEnable(GL11.GL_DEPTH_TEST);
-        GL11.glDepthFunc(GL11.GL_LEQUAL);
-
-        GL11.glMatrixMode(GL11.GL_PROJECTION);
-        GL11.glLoadIdentity();
-
-        GL11.glMatrixMode(GL11.GL_MODELVIEW);
-
+        // Setup rendering
         this.world = new World();
         this.worldRenderer = new WorldRenderer(this.world);
         this.player = new Player(this.world);
 
+        // Setup controls
+        Keyboard.create();
+        Mouse.create();
         Mouse.setGrabbed(true);
     }
 
@@ -158,18 +137,6 @@ public class Game implements Runnable {
         moveCameraToPlayer(partialTicks);
     }
 
-    private void setupUICamera(float partialTicks) {
-        int scaleFactor = 2;
-        int scale = 120 * scaleFactor;
-
-        GL11.glMatrixMode(GL11.GL_PROJECTION);
-        GL11.glLoadIdentity();
-        GLU.gluPerspective(70.0F, (float) this.gameWindow.displayWidth / (float) scale, 0.05F, 100F);
-        GL11.glMatrixMode(GL11.GL_MODELVIEW);
-        GL11.glLoadIdentity();
-
-        GL11.glTranslatef(GL11.GL_POINTS, 0, -0.1F);
-    }
 
     public void render(float partialTicks) {
         float mouseMoveX = Mouse.getDX();
@@ -179,7 +146,7 @@ public class Game implements Runnable {
             this.player.turn(mouseMoveX, mouseMoveY);
         }
 
-        this.hitResult = getTargetBlock(partialTicks);
+        HitResult hitResult = getTargetBlock(partialTicks);
 
         while (Mouse.next()) {
             if ((Mouse.getEventButton() == 0) && (Mouse.getEventButtonState())) {
@@ -187,16 +154,16 @@ public class Game implements Runnable {
                     paused = false;
                     Mouse.setGrabbed(true);
                 } else {
-                    if (this.hitResult != null) {
-                        this.world.setBlockAt(this.hitResult.x, this.hitResult.y, this.hitResult.z, 0);
+                    if (hitResult != null) {
+                        this.world.setBlockAt(hitResult.x, hitResult.y, hitResult.z, 0);
                     }
                 }
             }
             if ((Mouse.getEventButton() == 1) && (Mouse.getEventButtonState())) {
-                if (this.hitResult != null) {
-                    int x = this.hitResult.x - this.hitResult.face.x;
-                    int y = this.hitResult.y - this.hitResult.face.y;
-                    int z = this.hitResult.z - this.hitResult.face.z;
+                if (hitResult != null) {
+                    int x = hitResult.x - hitResult.face.x;
+                    int y = hitResult.y - hitResult.face.y;
+                    int z = hitResult.z - hitResult.face.z;
 
                     AABB placedBoundingBox = new AABB(x, y, z, x + 1, y + 1, z + 1);
                     if (!placedBoundingBox.intersects(this.player.boundingBox)) {
@@ -220,29 +187,25 @@ public class Game implements Runnable {
 
         GL11.glFogi(GL11.GL_FOG_MODE, 2048);
         GL11.glFogf(GL11.GL_FOG_DENSITY, 0.2F);
-        GL11.glFog(GL11.GL_FOG_COLOR, this.fogColor);
+        GL11.glFog(GL11.GL_FOG_COLOR, this.worldRenderer.fogColor);
 
         GL11.glDisable(GL11.GL_FOG);
         this.worldRenderer.render((int) this.player.x >> 4, (int) this.player.z >> 4, 0);
         GL11.glEnable(GL11.GL_FOG);
         this.worldRenderer.render((int) this.player.x >> 4, (int) this.player.z >> 4, 1);
 
-        if (this.hitResult != null) {
-            renderSelection(this.hitResult);
+        if (hitResult != null) {
+            renderSelection(hitResult);
         }
 
         GL11.glDisable(GL11.GL_CULL_FACE);
         GL11.glDisable(GL11.GL_TEXTURE_2D);
         GL11.glDisable(GL11.GL_FOG);
 
-        setupUICamera(partialTicks);
-        renderCrosshair(partialTicks);
+        this.gui.setupCamera();
+        this.gui.renderCrosshair();
     }
 
-    private void renderCrosshair(float partialTicks) {
-        GL11.glBlendFunc(775, 769);
-        Gui.drawTexturedModalRect(this.gameWindow.displayWidth / 2 - 7, this.gameWindow.displayHeight / 2 - 7, 0, 0, 16, 16);
-    }
 
     public void renderSelection(HitResult hitResult) {
         GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
