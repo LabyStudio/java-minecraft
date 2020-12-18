@@ -1,6 +1,6 @@
 package de.labystudio.game.world;
 
-import de.labystudio.game.render.Tesselator;
+import de.labystudio.game.render.Tessellator;
 import de.labystudio.game.util.EnumBlockFace;
 
 import java.util.HashMap;
@@ -28,7 +28,9 @@ public class Block {
         return id;
     }
 
-    public void render(Tesselator t, World world, int layer, int x, int y, int z) {
+    public void render(World world, int layer, int x, int y, int z) {
+        Tessellator t = Tessellator.instance;
+
         float u0 = (this.id - 1) / 16.0F;
         float u1 = u0 + 0.0624375F;
         float v0 = 0.0F;
@@ -46,120 +48,122 @@ public class Block {
         if (!world.isSolidBlockAt(x, y - 1, z)) {
             float br = world.getBrightnessAtBlock(x, y - 1, z) * c1;
             if (((br == c1 ? 1 : 0) ^ (layer == 1 ? 1 : 0)) != 0) {
-                t.color(br, br, br);
-                t.tex(u0, v1);
-                t.vertex(x0, y0, z1);
-                t.tex(u0, v0);
-                t.vertex(x0, y0, z0);
-                t.tex(u1, v0);
-                t.vertex(x1, y0, z0);
+                t.setColorRGB_F(br, br, br);
+                t.setTextureUV(u0, v1);
+                t.addVertex(x0, y0, z1);
+                t.setTextureUV(u0, v0);
+                t.addVertex(x0, y0, z0);
+                t.setTextureUV(u1, v0);
+                t.addVertex(x1, y0, z0);
 
-                t.tex(u1, v0);
-                t.vertex(x1, y0, z0);
-                t.tex(u1, v1);
-                t.vertex(x1, y0, z1);
-                t.tex(u0, v1);
-                t.vertex(x0, y0, z1);
+                t.setTextureUV(u1, v0);
+                t.addVertex(x1, y0, z0);
+                t.setTextureUV(u1, v1);
+                t.addVertex(x1, y0, z1);
+                t.setTextureUV(u0, v1);
+                t.addVertex(x0, y0, z1);
             }
         }
         if (!world.isSolidBlockAt(x, y + 1, z)) {
             float br = world.getBrightnessAtBlock(x, y, z) * c1;
             if (((br == c1 ? 1 : 0) ^ (layer == 1 ? 1 : 0)) != 0) {
-                t.color(br, br, br);
-                t.tex(u1, v1);
-                t.vertex(x1, y1, z1);
-                t.tex(u1, v0);
-                t.vertex(x1, y1, z0);
-                t.tex(u0, v0);
-                t.vertex(x0, y1, z0);
+                t.setColorRGB_F(br, br, br);
+                t.setTextureUV(u1, v1);
+                t.addVertex(x1, y1, z1);
+                t.setTextureUV(u1, v0);
+                t.addVertex(x1, y1, z0);
+                t.setTextureUV(u0, v0);
+                t.addVertex(x0, y1, z0);
 
-                t.tex(u0, v0);
-                t.vertex(x0, y1, z0);
-                t.tex(u0, v1);
-                t.vertex(x0, y1, z1);
-                t.tex(u1, v1);
-                t.vertex(x1, y1, z1);
+                t.setTextureUV(u0, v0);
+                t.addVertex(x0, y1, z0);
+                t.setTextureUV(u0, v1);
+                t.addVertex(x0, y1, z1);
+                t.setTextureUV(u1, v1);
+                t.addVertex(x1, y1, z1);
             }
         }
         if (!world.isSolidBlockAt(x, y, z - 1)) {
             float br = world.getBrightnessAtBlock(x, y, z - 1) * c2;
             if (((br == c2 ? 1 : 0) ^ (layer == 1 ? 1 : 0)) != 0) {
-                t.color(br, br, br);
-                t.tex(u1, v0);
-                t.vertex(x0, y1, z0);
-                t.tex(u0, v0);
-                t.vertex(x1, y1, z0);
-                t.tex(u0, v1);
-                t.vertex(x1, y0, z0);
+                t.setColorRGB_F(br, br, br);
+                t.setTextureUV(u1, v0);
+                t.addVertex(x0, y1, z0);
+                t.setTextureUV(u0, v0);
+                t.addVertex(x1, y1, z0);
+                t.setTextureUV(u0, v1);
+                t.addVertex(x1, y0, z0);
 
-                t.tex(u0, v1);
-                t.vertex(x1, y0, z0);
-                t.tex(u1, v1);
-                t.vertex(x0, y0, z0);
-                t.tex(u1, v0);
-                t.vertex(x0, y1, z0);
+                t.setTextureUV(u0, v1);
+                t.addVertex(x1, y0, z0);
+                t.setTextureUV(u1, v1);
+                t.addVertex(x0, y0, z0);
+                t.setTextureUV(u1, v0);
+                t.addVertex(x0, y1, z0);
             }
         }
         if (!world.isSolidBlockAt(x, y, z + 1)) {
             float br = world.getBrightnessAtBlock(x, y, z + 1) * c2;
             if (((br == c2 ? 1 : 0) ^ (layer == 1 ? 1 : 0)) != 0) {
-                t.color(br, br, br);
-                t.tex(u0, v0);
-                t.vertex(x0, y1, z1);
-                t.tex(u0, v1);
-                t.vertex(x0, y0, z1);
-                t.tex(u1, v1);
-                t.vertex(x1, y0, z1);
+                t.setColorRGB_F(br, br, br);
+                t.setTextureUV(u0, v0);
+                t.addVertex(x0, y1, z1);
+                t.setTextureUV(u0, v1);
+                t.addVertex(x0, y0, z1);
+                t.setTextureUV(u1, v1);
+                t.addVertex(x1, y0, z1);
 
-                t.tex(u1, v1);
-                t.vertex(x1, y0, z1);
-                t.tex(u1, v0);
-                t.vertex(x1, y1, z1);
-                t.tex(u0, v0);
-                t.vertex(x0, y1, z1);
+                t.setTextureUV(u1, v1);
+                t.addVertex(x1, y0, z1);
+                t.setTextureUV(u1, v0);
+                t.addVertex(x1, y1, z1);
+                t.setTextureUV(u0, v0);
+                t.addVertex(x0, y1, z1);
             }
         }
         if (!world.isSolidBlockAt(x - 1, y, z)) {
             float br = world.getBrightnessAtBlock(x - 1, y, z) * c3;
             if (((br == c3 ? 1 : 0) ^ (layer == 1 ? 1 : 0)) != 0) {
-                t.color(br, br, br);
-                t.tex(u1, v0);
-                t.vertex(x0, y1, z1);
-                t.tex(u0, v0);
-                t.vertex(x0, y1, z0);
-                t.tex(u0, v1);
-                t.vertex(x0, y0, z0);
+                t.setColorRGB_F(br, br, br);
+                t.setTextureUV(u1, v0);
+                t.addVertex(x0, y1, z1);
+                t.setTextureUV(u0, v0);
+                t.addVertex(x0, y1, z0);
+                t.setTextureUV(u0, v1);
+                t.addVertex(x0, y0, z0);
 
-                t.tex(u0, v1);
-                t.vertex(x0, y0, z0);
-                t.tex(u1, v1);
-                t.vertex(x0, y0, z1);
-                t.tex(u1, v0);
-                t.vertex(x0, y1, z1);
+                t.setTextureUV(u0, v1);
+                t.addVertex(x0, y0, z0);
+                t.setTextureUV(u1, v1);
+                t.addVertex(x0, y0, z1);
+                t.setTextureUV(u1, v0);
+                t.addVertex(x0, y1, z1);
             }
         }
         if (!world.isSolidBlockAt(x + 1, y, z)) {
             float br = world.getBrightnessAtBlock(x + 1, y, z) * c3;
             if (((br == c3 ? 1 : 0) ^ (layer == 1 ? 1 : 0)) != 0) {
-                t.color(br, br, br);
-                t.tex(u0, v1);
-                t.vertex(x1, y0, z1);
-                t.tex(u1, v1);
-                t.vertex(x1, y0, z0);
-                t.tex(u1, v0);
-                t.vertex(x1, y1, z0);
+                t.setColorRGB_F(br, br, br);
+                t.setTextureUV(u0, v1);
+                t.addVertex(x1, y0, z1);
+                t.setTextureUV(u1, v1);
+                t.addVertex(x1, y0, z0);
+                t.setTextureUV(u1, v0);
+                t.addVertex(x1, y1, z0);
 
-                t.tex(u1, v0);
-                t.vertex(x1, y1, z0);
-                t.tex(u0, v0);
-                t.vertex(x1, y1, z1);
-                t.tex(u0, v1);
-                t.vertex(x1, y0, z1);
+                t.setTextureUV(u1, v0);
+                t.addVertex(x1, y1, z0);
+                t.setTextureUV(u0, v0);
+                t.addVertex(x1, y1, z1);
+                t.setTextureUV(u0, v1);
+                t.addVertex(x1, y0, z1);
             }
         }
     }
 
-    public void renderFace(Tesselator tesselator, int x, int y, int z, EnumBlockFace face) {
+    public void renderFace(int x, int y, int z, EnumBlockFace face) {
+        Tessellator t = Tessellator.instance;
+
         float x0 = x + 0.0F;
         float x1 = x + 1.0F;
         float y0 = y + 0.0F;
@@ -167,58 +171,58 @@ public class Block {
         float z0 = z + 0.0F;
         float z1 = z + 1.0F;
         if (face == EnumBlockFace.BOTTOM) {
-            tesselator.vertex(x0, y0, z1);
-            tesselator.vertex(x0, y0, z0);
-            tesselator.vertex(x1, y0, z0);
+            t.addVertex(x0, y0, z1);
+            t.addVertex(x0, y0, z0);
+            t.addVertex(x1, y0, z0);
 
-            tesselator.vertex(x1, y0, z0);
-            tesselator.vertex(x1, y0, z1);
-            tesselator.vertex(x0, y0, z1);
+            t.addVertex(x1, y0, z0);
+            t.addVertex(x1, y0, z1);
+            t.addVertex(x0, y0, z1);
         }
         if (face == EnumBlockFace.TOP) {
-            tesselator.vertex(x1, y1, z1);
-            tesselator.vertex(x1, y1, z0);
-            tesselator.vertex(x0, y1, z0);
+            t.addVertex(x1, y1, z1);
+            t.addVertex(x1, y1, z0);
+            t.addVertex(x0, y1, z0);
 
-            tesselator.vertex(x0, y1, z0);
-            tesselator.vertex(x0, y1, z1);
-            tesselator.vertex(x1, y1, z1);
+            t.addVertex(x0, y1, z0);
+            t.addVertex(x0, y1, z1);
+            t.addVertex(x1, y1, z1);
         }
         if (face == EnumBlockFace.EAST) {
-            tesselator.vertex(x0, y1, z0);
-            tesselator.vertex(x1, y1, z0);
-            tesselator.vertex(x1, y0, z0);
+            t.addVertex(x0, y1, z0);
+            t.addVertex(x1, y1, z0);
+            t.addVertex(x1, y0, z0);
 
-            tesselator.vertex(x1, y0, z0);
-            tesselator.vertex(x0, y0, z0);
-            tesselator.vertex(x0, y1, z0);
+            t.addVertex(x1, y0, z0);
+            t.addVertex(x0, y0, z0);
+            t.addVertex(x0, y1, z0);
         }
         if (face == EnumBlockFace.WEST) {
-            tesselator.vertex(x0, y1, z1);
-            tesselator.vertex(x0, y0, z1);
-            tesselator.vertex(x1, y0, z1);
+            t.addVertex(x0, y1, z1);
+            t.addVertex(x0, y0, z1);
+            t.addVertex(x1, y0, z1);
 
-            tesselator.vertex(x1, y0, z1);
-            tesselator.vertex(x1, y1, z1);
-            tesselator.vertex(x0, y1, z1);
+            t.addVertex(x1, y0, z1);
+            t.addVertex(x1, y1, z1);
+            t.addVertex(x0, y1, z1);
         }
         if (face == EnumBlockFace.NORTH) {
-            tesselator.vertex(x0, y1, z1);
-            tesselator.vertex(x0, y1, z0);
-            tesselator.vertex(x0, y0, z0);
+            t.addVertex(x0, y1, z1);
+            t.addVertex(x0, y1, z0);
+            t.addVertex(x0, y0, z0);
 
-            tesselator.vertex(x0, y0, z0);
-            tesselator.vertex(x0, y0, z1);
-            tesselator.vertex(x0, y1, z1);
+            t.addVertex(x0, y0, z0);
+            t.addVertex(x0, y0, z1);
+            t.addVertex(x0, y1, z1);
         }
         if (face == EnumBlockFace.SOUTH) {
-            tesselator.vertex(x1, y0, z1);
-            tesselator.vertex(x1, y0, z0);
-            tesselator.vertex(x1, y1, z0);
+            t.addVertex(x1, y0, z1);
+            t.addVertex(x1, y0, z0);
+            t.addVertex(x1, y1, z0);
 
-            tesselator.vertex(x1, y1, z0);
-            tesselator.vertex(x1, y1, z1);
-            tesselator.vertex(x1, y0, z1);
+            t.addVertex(x1, y1, z0);
+            t.addVertex(x1, y1, z1);
+            t.addVertex(x1, y0, z1);
         }
     }
 }

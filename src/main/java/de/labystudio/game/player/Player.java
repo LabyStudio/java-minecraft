@@ -188,10 +188,10 @@ public class Player {
     }
 
     public void travel(float strafe, float vertical, float forward) {
-        float prevSpeed = getSpeed();
+        float prevSlipperiness = getBlockSlipperiness() * 0.91F;
 
-        float value = 0.16277136F / (prevSpeed * prevSpeed * prevSpeed);
-        double friction;
+        float value = 0.16277136F / (prevSlipperiness * prevSlipperiness * prevSlipperiness);
+        float friction;
 
         if (this.onGround) {
             friction = this.getAIMoveSpeed() * value;
@@ -202,7 +202,7 @@ public class Player {
         this.moveRelative(strafe, vertical, forward, friction);
 
         // Get new speed
-        float speed = getSpeed();
+        float slipperiness = getBlockSlipperiness() * 0.91F;
 
         // Move
         this.collision = moveCollide(-this.motionX, this.motionY, -this.motionZ);
@@ -213,19 +213,17 @@ public class Player {
         }
 
         // Decrease motion
-        this.motionX *= speed;
+        this.motionX *= slipperiness;
         this.motionY *= 0.9800000190734863D;
-        this.motionZ *= speed;
+        this.motionZ *= slipperiness;
     }
 
-    private float getSpeed() {
-        float slipperiness = 0.4F;
-        float slowDown = 0.91F;
-        return this.onGround ? slipperiness * slowDown : slowDown;
+    private float getBlockSlipperiness() {
+        return this.onGround ? 0.6F : 1.0F;
     }
 
-    private double getAIMoveSpeed() {
-        return this.sprinting ? 0.08 : 0.055D; // 0.10000000149011612D;
+    private float getAIMoveSpeed() {
+        return this.sprinting ? 0.13000001F : 0.10000000149011612F;
     }
 
     public void moveRelative(double forward, double up, double strafe, double friction) {

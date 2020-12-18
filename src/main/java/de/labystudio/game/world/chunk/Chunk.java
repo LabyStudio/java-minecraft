@@ -1,5 +1,6 @@
 package de.labystudio.game.world.chunk;
 
+import de.labystudio.game.render.Tessellator;
 import de.labystudio.game.world.World;
 import de.labystudio.game.world.Block;
 import de.labystudio.game.world.WorldRenderer;
@@ -40,7 +41,7 @@ public class Chunk {
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, renderer.textureId);
 
         // Start rendering
-        renderer.tesselator.init();
+        Tessellator.instance.startDrawing(4);
 
         // Render blocks
         for (int x = 0; x < SIZE; x++) {
@@ -53,14 +54,14 @@ public class Chunk {
                         int absoluteY = this.y * SIZE + y;
                         int absoluteZ = this.z * SIZE + z;
 
-                        Block.getById(typeId).render(renderer.tesselator, this.world, layer, absoluteX, absoluteY, absoluteZ);
+                        Block.getById(typeId).render(this.world, layer, absoluteX, absoluteY, absoluteZ);
                     }
                 }
             }
         }
 
         // Stop rendering
-        renderer.tesselator.flush();
+        Tessellator.instance.draw();
 
         // End storafe
         GL11.glDisable(GL11.GL_TEXTURE_2D);

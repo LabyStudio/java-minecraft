@@ -99,7 +99,7 @@ public class World {
     }
 
 
-    public ArrayList<AABB> getCollisionBoxes(AABB aabb ) {
+    public ArrayList<AABB> getCollisionBoxes( AABB aabb ) {
         ArrayList<AABB> aABBs = new ArrayList<>();
 
         int minX = (int) ( Math.floor( aabb.minX ) - 1 );

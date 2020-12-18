@@ -1,18 +1,16 @@
 package de.labystudio.game.world;
 
 import de.labystudio.game.render.Frustum;
-import de.labystudio.game.render.Tesselator;
 import de.labystudio.game.util.Textures;
 import de.labystudio.game.world.chunk.Chunk;
+import org.lwjgl.opengl.GL11;
 
 public class WorldRenderer implements WorldListener {
 
     public static final int RENDER_DISTANCE = 3;
 
     private final World world;
-
-    public final Tesselator tesselator = new Tesselator();
-    public final int textureId = Textures.loadTexture("/terrain.png", 9728);
+    public final int textureId = Textures.loadTexture("/terrain.png", GL11.GL_NEAREST);
 
     public WorldRenderer(World world) {
         this.world = world;

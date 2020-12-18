@@ -1,10 +1,7 @@
 package de.labystudio.game;
 
-import java.io.IOException;
-import java.nio.FloatBuffer;
-
-import de.labystudio.game.render.Tesselator;
 import de.labystudio.game.player.Player;
+import de.labystudio.game.render.Gui;
 import de.labystudio.game.util.AABB;
 import de.labystudio.game.util.EnumBlockFace;
 import de.labystudio.game.util.HitResult;
@@ -12,19 +9,22 @@ import de.labystudio.game.util.Timer;
 import de.labystudio.game.world.Block;
 import de.labystudio.game.world.World;
 import de.labystudio.game.world.WorldRenderer;
+import de.labystudio.game.world.chunk.Chunk;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
-import org.lwjgl.opengl.DisplayMode;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.util.glu.GLU;
 
+import java.nio.FloatBuffer;
+
 public class Game implements Runnable {
-    private static final boolean FULLSCREEN_MODE = false;
-    private int width;
-    private int height;
+
+    private GameWindow gameWindow = new GameWindow();
+
+    // Stuff
     private FloatBuffer fogColor = BufferUtils.createFloatBuffer(4);
     private Timer timer = new Timer(20.0F);
     private World world;
@@ -35,9 +35,13 @@ public class Game implements Runnable {
 
     private HitResult hitResult = null;
 
-    private Tesselator tesselator = new Tesselator();
+    public void init() throws LWJGLException {
+        // Setup display
+        this.gameWindow.init();
 
-    public void init() throws LWJGLException, IOException {
+        Keyboard.create();
+        Mouse.create();
+
         int col = 920330;
         float fr = 0.0F;
         float fg = 0.0F;
@@ -45,15 +49,6 @@ public class Game implements Runnable {
         this.fogColor.put(
                 new float[]{(col >> 16 & 0xFF) / 255.0F, (col >> 8 & 0xFF) / 255.0F, (col & 0xFF) / 255.0F, 1.0F});
         this.fogColor.flip();
-
-        Display.setDisplayMode(new DisplayMode(1600, 980));
-
-        Display.create();
-        Keyboard.create();
-        Mouse.create();
-
-        this.width = Display.getDisplayMode().getWidth();
-        this.height = Display.getDisplayMode().getHeight();
 
         GL11.glEnable(GL11.GL_TEXTURE_2D);
         GL11.glShadeModel(GL11.GL_SMOOTH);
@@ -74,12 +69,13 @@ public class Game implements Runnable {
         Mouse.setGrabbed(true);
     }
 
-    public void destroy() {
+    public void shutdown() {
         this.world.save();
+
+        this.gameWindow.destroy();
 
         Mouse.destroy();
         Keyboard.destroy();
-        Display.destroy();
     }
 
     public void run() {
@@ -89,16 +85,21 @@ public class Game implements Runnable {
             e.printStackTrace();
             System.exit(0);
         }
+
         long lastTime = System.currentTimeMillis();
         int frames = 0;
         try {
             do {
-
                 this.timer.advanceTime();
                 for (int i = 0; i < this.timer.ticks; i++) {
                     tick();
                 }
+
+                GL11.glViewport(0, 0, this.gameWindow.displayWidth, this.gameWindow.displayHeight);
                 render(this.timer.partialTicks);
+                this.gameWindow.update();
+                checkError();
+
                 frames++;
                 while (System.currentTimeMillis() >= lastTime + 1000L) {
                     System.out.println(frames + " fps, " + this.world.updates);
@@ -107,16 +108,23 @@ public class Game implements Runnable {
                     lastTime += 1000L;
                     frames = 0;
                 }
-                if (Keyboard.isKeyDown(1)) {
+
+                // Escape
+                if (Keyboard.isKeyDown(1) || !Display.isActive()) {
                     paused = true;
                     Mouse.setGrabbed(false);
-                    // break;
                 }
+
+                // Toggle fullscreen
+                if (Keyboard.isKeyDown(87)) {
+                    this.gameWindow.toggleFullscreen();
+                }
+
             } while (!Display.isCloseRequested());
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
-            destroy();
+            shutdown();
         }
     }
 
@@ -139,19 +147,24 @@ public class Game implements Runnable {
     }
 
     private void setupCamera(float partialTicks) {
+        int zFar = WorldRenderer.RENDER_DISTANCE * Chunk.SIZE;
+
         GL11.glMatrixMode(GL11.GL_PROJECTION);
         GL11.glLoadIdentity();
-        GLU.gluPerspective(85.0F + this.player.getFOVModifier(), 1.5f, 0.05F, 1000.0F);
+        GLU.gluPerspective(85.0F + this.player.getFOVModifier(),
+                (float) this.gameWindow.displayWidth / (float) this.gameWindow.displayHeight, 0.05F, zFar);
         GL11.glMatrixMode(GL11.GL_MODELVIEW);
         GL11.glLoadIdentity();
         moveCameraToPlayer(partialTicks);
     }
 
     private void setupUICamera(float partialTicks) {
+        int scaleFactor = 2;
+        int scale = 120 * scaleFactor;
+
         GL11.glMatrixMode(GL11.GL_PROJECTION);
         GL11.glLoadIdentity();
-        GLU.gluPerspective(45.0F, 1.5f, 0.05F, 1000.0F);
-        //GL11.glOrtho(GL11.GL_POINTS, 1600, 0, 980, -1, 1);
+        GLU.gluPerspective(70.0F, (float) this.gameWindow.displayWidth / (float) scale, 0.05F, 100F);
         GL11.glMatrixMode(GL11.GL_MODELVIEW);
         GL11.glLoadIdentity();
 
@@ -224,34 +237,11 @@ public class Game implements Runnable {
 
         setupUICamera(partialTicks);
         renderCrosshair(partialTicks);
-
-        Display.update();
     }
 
     private void renderCrosshair(float partialTicks) {
-        // GL11.glEnable(GL11.GL_BLEND);
-        GL11.glLogicOp(GL11.GL_COPY_INVERTED);
-        GL11.glEnable(GL11.GL_COLOR_LOGIC_OP);
-
-        // GL11.glBlendFunc(GL11.GL_SRC_COLOR, GL11.GL_ONE_MINUS_SRC_COLOR);
-        GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
-
-        double size = 0.001;
-
-        GL11.glLineWidth(4);
-        GL11.glBegin(GL11.GL_LINE_STRIP);
-        GL11.glVertex3d(-size, 0, 0);
-        GL11.glVertex3d(size, 0, 0);
-        GL11.glEnd();
-
-        GL11.glBegin(GL11.GL_LINE_STRIP);
-        GL11.glVertex3d(GL11.GL_POINTS, -size, 0);
-        GL11.glVertex3d(GL11.GL_POINTS, size, 0);
-        GL11.glEnd();
-
-        GL11.glLogicOp(GL11.GL_COPY);
-        GL11.glDisable(GL11.GL_COLOR_LOGIC_OP);
-        // GL11.glDisable(GL11.GL_BLEND);
+        GL11.glBlendFunc(775, 769);
+        Gui.drawTexturedModalRect(this.gameWindow.displayWidth / 2 - 7, this.gameWindow.displayHeight / 2 - 7, 0, 0, 16, 16);
     }
 
     public void renderSelection(HitResult hitResult) {
@@ -359,6 +349,6 @@ public class Game implements Runnable {
     }
 
     public static void main(String[] args) throws LWJGLException {
-        new Thread(new Game()).start();
+        new Thread(new Game(), "Game Thread").start();
     }
 }
