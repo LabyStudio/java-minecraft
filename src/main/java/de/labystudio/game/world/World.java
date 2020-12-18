@@ -9,13 +9,13 @@ import de.labystudio.game.world.chunk.Chunk;
 
 public class World {
 
+    public static final int TOTAL_HEIGHT = Chunk.SIZE * 16 - 1;
     public Map<Long, Chunk[]> chunks = new HashMap<>();
 
-    public int rebuiltThisFrame = 0;
+    public boolean rebuiltThisFrame = true;
     public int updates = 0;
 
     public World() {
-        //  calcLightDepths(0, 0, w, h);
         load();
     }
 
@@ -35,13 +35,13 @@ public class World {
          */
 
         int size = Chunk.SIZE * 10;
-
         int i = 0;
         for (int x = -size; x < size; x++) {
             for (int z = -size; z < size; z++) {
-                for (int y = 0; y < 64 - x / Chunk.SIZE + z / Chunk.SIZE; y++) {
-                    setBlockAt(x, y, z, 1);
+                for (int y = 0; y < 64 - i / 1000; y++) {
+                    setBlockAt(x, y, z, Block.GRASS.getId());
                 }
+                i++;
             }
         }
 
@@ -92,7 +92,7 @@ public class World {
 
     public Chunk getChunkAtBlock(int x, int y, int z) {
         Chunk[] chunkLayers = getChunkLayersAt(x >> 4, z >> 4);
-        return y < 0 || y >= Chunk.SIZE * 16 ? null : chunkLayers[y >> 4];
+        return y < 0 || y > TOTAL_HEIGHT ? null : chunkLayers[y >> 4];
     }
 
 
@@ -157,70 +157,17 @@ public class World {
         if (chunk != null) {
             chunk.setBlockAt(x & 15, y & 15, z & 15, type);
 
-            // calcLightDepths(x, z, 1, 1);
+            chunk.calcLightDepths(x & 15, z & 15, 1, 1);
             blockChanged(x, y, z);
         }
     }
 
-    /*
-    public void lightColumnChanged(int x, int z, int y0, int y1) {
-        setDirty(x - 1, y0 - 1, z - 1, x + 1, y1 + 1, z + 1);
-    }
-    */
-
-    /*
-    public void calcLightDepths(int x0, int y0, int x1, int y1) {
-        for (int x = x0; x < x0 + x1; x++) {
-            for (int z = y0; z < y0 + y1; z++) {
-                int oldDepth = this.lightDepths[(x + z * this.width)];
-                int y = this.depth - 1;
-                while ((y > 0) && (!isLightBlocker(x, y, z))) {
-                    y--;
-                }
-                this.lightDepths[(x + z * this.width)] = y;
-                if (oldDepth != y) {
-                    int yl0 = oldDepth < y ? oldDepth : y;
-                    int yl1 = oldDepth > y ? oldDepth : y;
-                    for (int i = 0; i < this.worldListeners.size(); i++) {
-                        ((WorldListener) this.worldListeners.get(i)).lightColumnChanged(x, z, yl0, yl1);
-                    }
-                }
-            }
-        }
+    public void lightColumnChanged(int x, int z, int minY, int maxY) {
+        setDirty(x - 1, minY - 1, z - 1, x + 1, maxY + 1, z + 1);
     }
 
-
-    public void addListener(WorldListener worldListener) {
-        this.worldListeners.add(worldListener);
-    }
-
-    public void removeListener(WorldListener worldListener) {
-        this.worldListeners.remove(worldListener);
-    }
-*/
-
-
-    /*
-    public boolean isLightBlocker(int x, int y, int z) {
-        return isSolidTile(x, y, z);
-    }
-    */
-
-    /*
-    public float getBrightness(int x, int y, int z) {
-        float dark = 0.8F;
-        float light = 1.0F;
-        if ((x < 0) || (y < 0) || (z < 0) || (x >= this.width) || (y >= this.depth) || (z >= this.height)) {
-            return light;
-        }
-        if (y < this.lightDepths[(x + z * this.width)]) {
-            return dark;
-        }
-        return light;
-    }
-*/
-
-    public float getBrightness(int x, int y, int z) {
-        return 1;
+    public float getBrightnessAtBlock(int x, int y, int z) {
+        Chunk chunk = getChunkAtBlock(x, y, z);
+        return chunk == null ? 0 : chunk.getBrightnessAt(x & 15, y & 15, z & 15);
     }
 }

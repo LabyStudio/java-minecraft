@@ -16,11 +16,10 @@ public class WorldRenderer implements WorldListener {
 
     public WorldRenderer(World world) {
         this.world = world;
-        //this.world.addListener(this);
     }
 
     public void render(int x, int z, int layer) {
-        this.world.rebuiltThisFrame = 0;
+        this.world.rebuiltThisFrame = true;
         Frustum frustum = Frustum.getFrustum();
 
         for (Chunk[] chunkLayers : this.world.chunks.values()) {

@@ -3,17 +3,33 @@ package de.labystudio.game.world;
 import de.labystudio.game.render.Tesselator;
 import de.labystudio.game.util.EnumBlockFace;
 
-public class Tile {
-    public static Tile rock = new Tile(0);
-    public static Tile grass = new Tile(1);
-    private int tex = 0;
+import java.util.HashMap;
+import java.util.Map;
 
-    private Tile(int tex) {
-        this.tex = tex;
+public class Block {
+
+    private static final Map<Short, Block> blocks = new HashMap<>();
+
+    public static Block STONE = new Block((short) 1);
+    public static Block GRASS = new Block((short) 2);
+
+    private int id = 0;
+
+    public static Block getById(short typeId) {
+        return blocks.get(typeId);
+    }
+
+    private Block(short id) {
+        this.id = id;
+        blocks.put(id, this);
+    }
+
+    public int getId() {
+        return id;
     }
 
     public void render(Tesselator t, World world, int layer, int x, int y, int z) {
-        float u0 = this.tex / 16.0F;
+        float u0 = (this.id - 1) / 16.0F;
         float u1 = u0 + 0.0624375F;
         float v0 = 0.0F;
         float v1 = v0 + 0.0624375F;
@@ -28,7 +44,7 @@ public class Tile {
         float z0 = z + 0.0F;
         float z1 = z + 1.0F;
         if (!world.isSolidBlockAt(x, y - 1, z)) {
-            float br = world.getBrightness(x, y - 1, z) * c1;
+            float br = world.getBrightnessAtBlock(x, y - 1, z) * c1;
             if (((br == c1 ? 1 : 0) ^ (layer == 1 ? 1 : 0)) != 0) {
                 t.color(br, br, br);
                 t.tex(u0, v1);
@@ -47,7 +63,7 @@ public class Tile {
             }
         }
         if (!world.isSolidBlockAt(x, y + 1, z)) {
-            float br = world.getBrightness(x, y, z) * c1;
+            float br = world.getBrightnessAtBlock(x, y, z) * c1;
             if (((br == c1 ? 1 : 0) ^ (layer == 1 ? 1 : 0)) != 0) {
                 t.color(br, br, br);
                 t.tex(u1, v1);
@@ -66,7 +82,7 @@ public class Tile {
             }
         }
         if (!world.isSolidBlockAt(x, y, z - 1)) {
-            float br = world.getBrightness(x, y, z - 1) * c2;
+            float br = world.getBrightnessAtBlock(x, y, z - 1) * c2;
             if (((br == c2 ? 1 : 0) ^ (layer == 1 ? 1 : 0)) != 0) {
                 t.color(br, br, br);
                 t.tex(u1, v0);
@@ -85,7 +101,7 @@ public class Tile {
             }
         }
         if (!world.isSolidBlockAt(x, y, z + 1)) {
-            float br = world.getBrightness(x, y, z + 1) * c2;
+            float br = world.getBrightnessAtBlock(x, y, z + 1) * c2;
             if (((br == c2 ? 1 : 0) ^ (layer == 1 ? 1 : 0)) != 0) {
                 t.color(br, br, br);
                 t.tex(u0, v0);
@@ -104,7 +120,7 @@ public class Tile {
             }
         }
         if (!world.isSolidBlockAt(x - 1, y, z)) {
-            float br = world.getBrightness(x - 1, y, z) * c3;
+            float br = world.getBrightnessAtBlock(x - 1, y, z) * c3;
             if (((br == c3 ? 1 : 0) ^ (layer == 1 ? 1 : 0)) != 0) {
                 t.color(br, br, br);
                 t.tex(u1, v0);
@@ -123,7 +139,7 @@ public class Tile {
             }
         }
         if (!world.isSolidBlockAt(x + 1, y, z)) {
-            float br = world.getBrightness(x + 1, y, z) * c3;
+            float br = world.getBrightnessAtBlock(x + 1, y, z) * c3;
             if (((br == c3 ? 1 : 0) ^ (layer == 1 ? 1 : 0)) != 0) {
                 t.color(br, br, br);
                 t.tex(u0, v1);

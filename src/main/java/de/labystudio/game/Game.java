@@ -9,6 +9,7 @@ import de.labystudio.game.util.AABB;
 import de.labystudio.game.util.EnumBlockFace;
 import de.labystudio.game.util.HitResult;
 import de.labystudio.game.util.Timer;
+import de.labystudio.game.world.Block;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
@@ -187,7 +188,7 @@ public class Game implements Runnable {
 
                     AABB placedBoundingBox = new AABB(x, y, z, x + 1, y + 1, z + 1);
                     if (!placedBoundingBox.intersects(this.player.boundingBox)) {
-                        this.world.setBlockAt(x, y, z, 1);
+                        this.world.setBlockAt(x, y, z, Block.STONE.getId());
                     }
 
                 }
