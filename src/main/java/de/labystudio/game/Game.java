@@ -2,7 +2,6 @@ package de.labystudio.game;
 
 import java.io.IOException;
 import java.nio.FloatBuffer;
-import javax.swing.JOptionPane;
 
 import de.labystudio.game.render.Tesselator;
 import de.labystudio.game.player.Player;
@@ -10,9 +9,6 @@ import de.labystudio.game.util.AABB;
 import de.labystudio.game.util.EnumBlockFace;
 import de.labystudio.game.util.HitResult;
 import de.labystudio.game.util.Timer;
-import de.labystudio.game.world.World;
-import de.labystudio.game.world.WorldRenderer;
-import de.labystudio.game.world.chunk.Chunk;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
@@ -21,6 +17,9 @@ import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.util.glu.GLU;
+
+import de.labystudio.game.world.World;
+import de.labystudio.game.world.WorldRenderer;
 
 public class Game implements Runnable {
     private static final boolean FULLSCREEN_MODE = false;
@@ -68,7 +67,7 @@ public class Game implements Runnable {
 
         GL11.glMatrixMode(GL11.GL_MODELVIEW);
 
-        this.world = new World(50, 50, 50);
+        this.world = new World();
         this.worldRenderer = new WorldRenderer(this.world);
         this.player = new Player(this.world);
 
@@ -87,7 +86,7 @@ public class Game implements Runnable {
         try {
             init();
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, e.toString(), "Failed to start Game", 0);
+            e.printStackTrace();
             System.exit(0);
         }
         long lastTime = System.currentTimeMillis();
@@ -102,8 +101,8 @@ public class Game implements Runnable {
                 render(this.timer.partialTicks);
                 frames++;
                 while (System.currentTimeMillis() >= lastTime + 1000L) {
-                    System.out.println(frames + " fps, " + Chunk.updates);
-                    Chunk.updates = 0;
+                    System.out.println(frames + " fps, " + this.world.updates);
+                    this.world.updates = 0;
 
                     lastTime += 1000L;
                     frames = 0;
@@ -176,7 +175,7 @@ public class Game implements Runnable {
                     Mouse.setGrabbed(true);
                 } else {
                     if (this.hitResult != null) {
-                        this.world.setTile(this.hitResult.x, this.hitResult.y, this.hitResult.z, 0);
+                        this.world.setBlockAt(this.hitResult.x, this.hitResult.y, this.hitResult.z, 0);
                     }
                 }
             }
@@ -188,7 +187,7 @@ public class Game implements Runnable {
 
                     AABB placedBoundingBox = new AABB(x, y, z, x + 1, y + 1, z + 1);
                     if (!placedBoundingBox.intersects(this.player.boundingBox)) {
-                        this.world.setTile(x, y, z, 1);
+                        this.world.setBlockAt(x, y, z, 1);
                     }
 
                 }
@@ -211,9 +210,9 @@ public class Game implements Runnable {
         GL11.glFog(GL11.GL_FOG_COLOR, this.fogColor);
 
         GL11.glDisable(GL11.GL_FOG);
-        this.worldRenderer.render(this.player, 0);
+        this.worldRenderer.render((int) this.player.x >> 4, (int) this.player.z >> 4, 0);
         GL11.glEnable(GL11.GL_FOG);
-        this.worldRenderer.render(this.player, 1);
+        this.worldRenderer.render((int) this.player.x >> 4, (int) this.player.z >> 4, 1);
 
         if (this.hitResult != null) {
             renderSelection(this.hitResult);
@@ -315,18 +314,20 @@ public class Game implements Runnable {
         double targetY = this.player.y + this.player.getEyeHeight() - 0.08D - vectorY;
         double targetZ = this.player.z - vectorZ;
 
-        int prevAirX = (int) targetX;
-        int prevAirY = (int) targetY;
-        int prevAirZ = (int) targetZ;
+        int shift = -1;
+
+        int prevAirX = (int) (targetX < 0 ? targetX + shift : targetX);
+        int prevAirY = (int) (targetY < 0 ? targetY + shift : targetY);
+        int prevAirZ = (int) (targetZ < 0 ? targetZ + shift : targetZ);
 
         for (int i = 0; i < 800; i++) {
             targetX += vectorX / 10D;
             targetY += vectorY / 10D;
             targetZ += vectorZ / 10D;
 
-            int hitX = (int) targetX;
-            int hitY = (int) targetY;
-            int hitZ = (int) targetZ;
+            int hitX = (int) (targetX < 0 ? targetX + shift : targetX);
+            int hitY = (int) (targetY < 0 ? targetY + shift : targetY);
+            int hitZ = (int) (targetZ < 0 ? targetZ + shift : targetZ);
 
             EnumBlockFace targetFace = null;
             for (EnumBlockFace type : EnumBlockFace.values()) {
@@ -336,15 +337,15 @@ public class Game implements Runnable {
                 }
             }
 
-            if (this.world.isSolidTile(hitX, hitY, hitZ)) {
+            if (this.world.isSolidBlockAt(hitX, hitY, hitZ)) {
                 if (targetFace == null) {
                     return null;
                 }
                 return new HitResult(hitX, hitY, hitZ, targetFace);
             } else {
-                prevAirX = (int) targetX;
-                prevAirY = (int) targetY;
-                prevAirZ = (int) targetZ;
+                prevAirX = (int) (targetX < 0 ? targetX + shift : targetX);
+                prevAirY = (int) (targetY < 0 ? targetY + shift : targetY);
+                prevAirZ = (int) (targetZ < 0 ? targetZ + shift : targetZ);
             }
         }
         return null;

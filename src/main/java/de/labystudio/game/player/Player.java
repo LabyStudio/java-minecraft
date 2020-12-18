@@ -56,10 +56,7 @@ public class Player {
     }
 
     private void resetPos() {
-        float x = (float) Math.random() * this.world.width;
-        float y = this.world.depth + 10;
-        float z = (float) Math.random() * this.world.height;
-        setPos(x, y, z);
+        setPos(0, 70, 0);
     }
 
     private void setPos(float x, float y, float z) {
@@ -312,7 +309,7 @@ public class Player {
         double originalTargetZ = targetZ;
 
         if (this.onGround && this.sneaking) {
-            for (double d5 = 0.05D; targetX != 0.0D && this.world.getCubes(this.boundingBox.offset(targetX, (double) (-this.stepHeight), 0.0D)).isEmpty(); originalTargetX = targetX) {
+            for (double d5 = 0.05D; targetX != 0.0D && this.world.getCollisionBoxes(this.boundingBox.offset(targetX, (double) (-this.stepHeight), 0.0D)).isEmpty(); originalTargetX = targetX) {
                 if (targetX < 0.05D && targetX >= -0.05D) {
                     targetX = 0.0D;
                 } else if (targetX > 0.0D) {
@@ -322,7 +319,7 @@ public class Player {
                 }
             }
 
-            for (; targetZ != 0.0D && this.world.getCubes(this.boundingBox.offset(0.0D, (double) (-this.stepHeight), targetZ)).isEmpty(); originalTargetZ = targetZ) {
+            for (; targetZ != 0.0D && this.world.getCollisionBoxes(this.boundingBox.offset(0.0D, (double) (-this.stepHeight), targetZ)).isEmpty(); originalTargetZ = targetZ) {
                 if (targetZ < 0.05D && targetZ >= -0.05D) {
                     targetZ = 0.0D;
                 } else if (targetZ > 0.0D) {
@@ -332,7 +329,7 @@ public class Player {
                 }
             }
 
-            for (; targetX != 0.0D && targetZ != 0.0D && this.world.getCubes(this.boundingBox.offset(targetX, (double) (-this.stepHeight), targetZ)).isEmpty(); originalTargetZ = targetZ) {
+            for (; targetX != 0.0D && targetZ != 0.0D && this.world.getCollisionBoxes(this.boundingBox.offset(targetX, (double) (-this.stepHeight), targetZ)).isEmpty(); originalTargetZ = targetZ) {
                 if (targetX < 0.05D && targetX >= -0.05D) {
                     targetX = 0.0D;
                 } else if (targetX > 0.0D) {
@@ -354,7 +351,7 @@ public class Player {
         }
 
         // Get level tiles as bounding boxes
-        List<AABB> aABBs = this.world.getCubes(this.boundingBox.expand(targetX, targetY, targetZ));
+        List<AABB> aABBs = this.world.getCollisionBoxes(this.boundingBox.expand(targetX, targetY, targetZ));
 
         // Move bounding box
         for (AABB aABB : aABBs) {

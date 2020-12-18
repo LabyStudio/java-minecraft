@@ -27,7 +27,7 @@ public class Tile {
         float y1 = y + 1.0F;
         float z0 = z + 0.0F;
         float z1 = z + 1.0F;
-        if (!world.isSolidTile(x, y - 1, z)) {
+        if (!world.isSolidBlockAt(x, y - 1, z)) {
             float br = world.getBrightness(x, y - 1, z) * c1;
             if (((br == c1 ? 1 : 0) ^ (layer == 1 ? 1 : 0)) != 0) {
                 t.color(br, br, br);
@@ -46,7 +46,7 @@ public class Tile {
                 t.vertex(x0, y0, z1);
             }
         }
-        if (!world.isSolidTile(x, y + 1, z)) {
+        if (!world.isSolidBlockAt(x, y + 1, z)) {
             float br = world.getBrightness(x, y, z) * c1;
             if (((br == c1 ? 1 : 0) ^ (layer == 1 ? 1 : 0)) != 0) {
                 t.color(br, br, br);
@@ -65,7 +65,7 @@ public class Tile {
                 t.vertex(x1, y1, z1);
             }
         }
-        if (!world.isSolidTile(x, y, z - 1)) {
+        if (!world.isSolidBlockAt(x, y, z - 1)) {
             float br = world.getBrightness(x, y, z - 1) * c2;
             if (((br == c2 ? 1 : 0) ^ (layer == 1 ? 1 : 0)) != 0) {
                 t.color(br, br, br);
@@ -84,7 +84,7 @@ public class Tile {
                 t.vertex(x0, y1, z0);
             }
         }
-        if (!world.isSolidTile(x, y, z + 1)) {
+        if (!world.isSolidBlockAt(x, y, z + 1)) {
             float br = world.getBrightness(x, y, z + 1) * c2;
             if (((br == c2 ? 1 : 0) ^ (layer == 1 ? 1 : 0)) != 0) {
                 t.color(br, br, br);
@@ -103,7 +103,7 @@ public class Tile {
                 t.vertex(x0, y1, z1);
             }
         }
-        if (!world.isSolidTile(x - 1, y, z)) {
+        if (!world.isSolidBlockAt(x - 1, y, z)) {
             float br = world.getBrightness(x - 1, y, z) * c3;
             if (((br == c3 ? 1 : 0) ^ (layer == 1 ? 1 : 0)) != 0) {
                 t.color(br, br, br);
@@ -122,7 +122,7 @@ public class Tile {
                 t.vertex(x0, y1, z1);
             }
         }
-        if (!world.isSolidTile(x + 1, y, z)) {
+        if (!world.isSolidBlockAt(x + 1, y, z)) {
             float br = world.getBrightness(x + 1, y, z) * c3;
             if (((br == c3 ? 1 : 0) ^ (layer == 1 ? 1 : 0)) != 0) {
                 t.color(br, br, br);

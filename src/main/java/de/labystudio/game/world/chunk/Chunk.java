@@ -1,90 +1,92 @@
 package de.labystudio.game.world.chunk;
 
-import de.labystudio.game.util.Textures;
-import de.labystudio.game.util.AABB;
-
 import de.labystudio.game.world.World;
-import de.labystudio.game.render.Tesselator;
 import de.labystudio.game.world.Tile;
+import de.labystudio.game.world.WorldRenderer;
 import org.lwjgl.opengl.GL11;
 
 public class Chunk {
-    private static int texture = Textures.loadTexture("/terrain.png", 9728);
-    private static Tesselator tesselator = new Tesselator();
+    public static final int SIZE = 16;
 
-    public AABB aabb;
     public final World world;
 
-    public final int minX;
-    public final int minY;
-    public final int minZ;
-    public final int maxX;
-    public final int maxY;
-    public final int maxZ;
+    private byte[] blocks = new byte[(SIZE * SIZE + SIZE) * SIZE + SIZE];
+    // private int[] lightDepths;
+
+    public int x;
+    public int y;
+    public int z;
 
     private boolean dirty = true;
     private int lists = -1;
-    public static int rebuiltThisFrame = 0;
-    public static int updates = 0;
 
-    public Chunk(World world, int minX, int minY, int minZ, int maxX, int maxY, int maxZ) {
+    public Chunk(World world, int x, int y, int z) {
         this.world = world;
 
-        this.minX = minX;
-        this.minY = minY;
-        this.minZ = minZ;
-        this.maxX = maxX;
-        this.maxY = maxY;
-        this.maxZ = maxZ;
+        this.x = x;
+        this.y = y;
+        this.z = z;
 
-        this.aabb = new AABB(minX, minY, minZ, maxX, maxY, maxZ);
         this.lists = GL11.glGenLists(2);
     }
 
-    private void rebuild(int layer) {
-        if (rebuiltThisFrame == 2) {
-            return;
-        }
+    private void rebuild(WorldRenderer renderer, int layer) {
+        // No longer dirty
         this.dirty = false;
 
-        updates += 1;
-        rebuiltThisFrame += 1;
-
+        // Create GPU memory list storage
         GL11.glNewList(this.lists + layer, 4864);
         GL11.glEnable(GL11.GL_TEXTURE_2D);
-        GL11.glBindTexture(3553, texture);
+        GL11.glBindTexture(3553, renderer.textureId);
 
-        tesselator.init();
+        // Start rendering
+        renderer.tesselator.init();
 
-        int tiles = 0;
-        for (int x = this.minX; x < this.maxX; x++) {
-            for (int y = this.minY; y < this.maxY; y++) {
-                for (int z = this.minZ; z < this.maxZ; z++) {
-                    if (this.world.isTile(x, y, z)) {
-                        int type = y == this.world.depth * 2 / 3 ? 0 : 1;
+        // Render blocks
+        for (int x = 0; x < SIZE; x++) {
+            for (int y = 0; y < SIZE; y++) {
+                for (int z = 0; z < SIZE; z++) {
+                    if (isSolidBlockAt(x, y, z)) {
+                        int absoluteX = this.x * SIZE + x;
+                        int absoluteY = this.y * SIZE + y;
+                        int absoluteZ = this.z * SIZE + z;
 
-                        tiles++;
-
-                        if (type == 0) {
-                            Tile.rock.render(tesselator, this.world, layer, x, y, z);
-                        } else {
-                            Tile.grass.render(tesselator, this.world, layer, x, y, z);
-                        }
+                        Tile.grass.render(renderer.tesselator, this.world, layer, absoluteX, absoluteY, absoluteZ);
                     }
                 }
             }
         }
 
-        tesselator.flush();
+        // Stop rendering
+        renderer.tesselator.flush();
 
+        // End storafe
         GL11.glDisable(GL11.GL_TEXTURE_2D);
         GL11.glEndList();
     }
 
-    public void render(int layer) {
-        if (this.dirty) {
-            rebuild(0);
-            rebuild(1);
+    public boolean isSolidBlockAt(int x, int y, int z) {
+        return getBlockAt(x, y, z) != 0;
+    }
+
+    public byte getBlockAt(int x, int y, int z) {
+        int index = y << 8 | z << 4 | x;
+        return this.blocks[index];
+    }
+
+    public void setBlockAt(int x, int y, int z, int type) {
+        int index = y << 8 | z << 4 | x;
+        this.blocks[index] = (byte) type;
+    }
+
+    public void render(WorldRenderer renderer, int layer) {
+        if (this.dirty && this.world.rebuiltThisFrame != 2) {
+            this.world.updates += 2;
+            this.world.rebuiltThisFrame += 2;
+            this.dirty = false;
+
+            rebuild(renderer, 0);
+            rebuild(renderer, 1);
         }
         GL11.glCallList(this.lists + layer);
     }
