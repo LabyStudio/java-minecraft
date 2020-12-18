@@ -56,7 +56,7 @@ public class Player {
     }
 
     private void resetPos() {
-        setPos(0, 70, 0);
+        setPos(0, 76, 0);
     }
 
     private void setPos(float x, float y, float z) {

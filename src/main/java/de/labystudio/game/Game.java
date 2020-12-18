@@ -6,9 +6,9 @@ import de.labystudio.game.util.AABB;
 import de.labystudio.game.util.EnumBlockFace;
 import de.labystudio.game.util.HitResult;
 import de.labystudio.game.util.Timer;
-import de.labystudio.game.world.Block;
 import de.labystudio.game.world.World;
 import de.labystudio.game.world.WorldRenderer;
+import de.labystudio.game.world.block.Block;
 import de.labystudio.game.world.chunk.Chunk;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
@@ -74,6 +74,9 @@ public class Game implements Runnable {
                     tick();
                 }
 
+                // Limit framerate
+                Thread.sleep(5L);
+
                 GL11.glViewport(0, 0, this.gameWindow.displayWidth, this.gameWindow.displayHeight);
                 render(this.timer.partialTicks);
                 this.gameWindow.update();
@@ -126,7 +129,7 @@ public class Game implements Runnable {
     }
 
     private void setupCamera(float partialTicks) {
-        int zFar = WorldRenderer.RENDER_DISTANCE * Chunk.SIZE;
+        int zFar = (WorldRenderer.RENDER_DISTANCE * 2) * Chunk.SIZE;
 
         GL11.glMatrixMode(GL11.GL_PROJECTION);
         GL11.glLoadIdentity();
@@ -161,9 +164,9 @@ public class Game implements Runnable {
             }
             if ((Mouse.getEventButton() == 1) && (Mouse.getEventButtonState())) {
                 if (hitResult != null) {
-                    int x = hitResult.x - hitResult.face.x;
-                    int y = hitResult.y - hitResult.face.y;
-                    int z = hitResult.z - hitResult.face.z;
+                    int x = hitResult.x + hitResult.face.x;
+                    int y = hitResult.y + hitResult.face.y;
+                    int z = hitResult.z + hitResult.face.z;
 
                     AABB placedBoundingBox = new AABB(x, y, z, x + 1, y + 1, z + 1);
                     if (!placedBoundingBox.intersects(this.player.boundingBox)) {
@@ -183,11 +186,10 @@ public class Game implements Runnable {
         setupCamera(partialTicks);
 
         GL11.glEnable(GL11.GL_CULL_FACE);
-        GL11.glEnable(GL11.GL_FOG);
 
-        GL11.glFogi(GL11.GL_FOG_MODE, 2048);
-        GL11.glFogf(GL11.GL_FOG_DENSITY, 0.2F);
-        GL11.glFog(GL11.GL_FOG_COLOR, this.worldRenderer.fogColor);
+        // Fog
+        GL11.glEnable(GL11.GL_FOG);
+        this.worldRenderer.setupFog();
 
         GL11.glDisable(GL11.GL_FOG);
         this.worldRenderer.render((int) this.player.x >> 4, (int) this.player.z >> 4, 0);
@@ -206,16 +208,15 @@ public class Game implements Runnable {
         this.gui.renderCrosshair();
     }
 
-
     public void renderSelection(HitResult hitResult) {
-        GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+        GL11.glColor4f(0.0F, 0.0F, 0.0F, 1.0F);
+        GL11.glLineWidth(1);
         drawBoundingBox(hitResult.x, hitResult.y, hitResult.z,
                 hitResult.x + 1, hitResult.y + 1, hitResult.z + 1);
     }
 
     private void drawBoundingBox(double minX, double minY, double minZ,
                                  double maxX, double maxY, double maxZ) {
-        GL11.glLineWidth(4);
 
         // Bottom
         GL11.glBegin(GL11.GL_LINE_LOOP);
@@ -284,7 +285,7 @@ public class Game implements Runnable {
 
             EnumBlockFace targetFace = null;
             for (EnumBlockFace type : EnumBlockFace.values()) {
-                if (prevAirX == hitX - type.x && prevAirY == hitY - type.y && prevAirZ == hitZ - type.z) {
+                if (prevAirX == hitX + type.x && prevAirY == hitY + type.y && prevAirZ == hitZ + type.z) {
                     targetFace = type;
                     break;
                 }

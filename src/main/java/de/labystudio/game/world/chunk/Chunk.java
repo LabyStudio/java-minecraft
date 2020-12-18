@@ -2,8 +2,8 @@ package de.labystudio.game.world.chunk;
 
 import de.labystudio.game.render.Tessellator;
 import de.labystudio.game.world.World;
-import de.labystudio.game.world.Block;
 import de.labystudio.game.world.WorldRenderer;
+import de.labystudio.game.world.block.Block;
 import org.lwjgl.opengl.GL11;
 
 public class Chunk {
@@ -12,7 +12,7 @@ public class Chunk {
     public final World world;
 
     private final byte[] blocks = new byte[(SIZE * SIZE + SIZE) * SIZE + SIZE];
-    private final byte[] lightDepths = new byte[(SIZE * SIZE + SIZE) * SIZE + SIZE];
+    private final byte[] blockLight = new byte[(SIZE * SIZE + SIZE) * SIZE + SIZE];
 
     public int x;
     public int y;
@@ -29,6 +29,16 @@ public class Chunk {
         this.z = z;
 
         this.lists = GL11.glGenLists(2);
+
+        // Fill chunk with light
+        for (int lightX = 0; lightX < SIZE; lightX++) {
+            for (int lightY = 0; lightY < SIZE; lightY++) {
+                for (int lightZ = 0; lightZ < SIZE; lightZ++) {
+                    int index = lightY << 8 | lightZ << 4 | lightX;
+                    this.blockLight[index] = 127;
+                }
+            }
+        }
     }
 
     private void rebuild(WorldRenderer renderer, int layer) {
@@ -41,7 +51,8 @@ public class Chunk {
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, renderer.textureId);
 
         // Start rendering
-        Tessellator.instance.startDrawing(4);
+        Tessellator tessellator = Tessellator.instance;
+        tessellator.startDrawing(4);
 
         // Render blocks
         for (int x = 0; x < SIZE; x++) {
@@ -54,14 +65,15 @@ public class Chunk {
                         int absoluteY = this.y * SIZE + y;
                         int absoluteZ = this.z * SIZE + z;
 
-                        Block.getById(typeId).render(this.world, layer, absoluteX, absoluteY, absoluteZ);
+                        Block block = Block.getById(typeId);
+                        block.render(tessellator, this.world, layer, absoluteX, absoluteY, absoluteZ);
                     }
                 }
             }
         }
 
         // Stop rendering
-        Tessellator.instance.draw();
+        tessellator.draw();
 
         // End storafe
         GL11.glDisable(GL11.GL_TEXTURE_2D);
@@ -75,6 +87,11 @@ public class Chunk {
     public byte getBlockAt(int x, int y, int z) {
         int index = y << 8 | z << 4 | x;
         return this.blocks[index];
+    }
+
+    public void setLightAt(int x, int y, int z, float brightness) {
+        int index = y << 8 | z << 4 | x;
+        this.blockLight[index] = (byte) (127 * brightness);
     }
 
     public void setBlockAt(int x, int y, int z, int type) {
@@ -98,42 +115,8 @@ public class Chunk {
         this.dirty = true;
     }
 
-    public void calcLightDepths(int minX, int minZ, int maxX, int maxZ) {
-        for (int x = minX; x < minX + maxX; x++) {
-            for (int z = minZ; z < minZ + maxZ; z++) {
-                int y = World.TOTAL_HEIGHT - 1;
-
-                while (y > 0 && !this.world.isSolidBlockAt(x, y, z)) {
-                    y--;
-                }
-
-                int index = z << 4 | x;
-                int oldDepth = this.lightDepths[index];
-                this.lightDepths[index] = (byte) y;
-
-                if (oldDepth != y) {
-                    int minY = Math.min(oldDepth, y);
-                    int maxY = Math.max(oldDepth, y);
-
-                    this.world.lightColumnChanged(x, z, minY, maxY);
-                }
-            }
-        }
-    }
-
     public float getBrightnessAt(int x, int y, int z) {
-        float dark = 0.8F;
-        float light = 1.0F;
-
-        if ((x < 0) || (y < 0) || (z < 0) || (x >= SIZE) || (y >= SIZE) || (z >= SIZE)) {
-            return light;
-        }
-
-        int index = z << 4 | x;
-        if (y < this.lightDepths[index]) {
-            return dark;
-        }
-
-        return light;
+        int index = y << 8 | z << 4 | x;
+        return 1.0F / 127F * this.blockLight[index];
     }
 }
