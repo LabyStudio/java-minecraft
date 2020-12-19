@@ -84,7 +84,7 @@ public class Game implements Runnable {
 
                 frames++;
                 while (System.currentTimeMillis() >= lastTime + 1000L) {
-                    System.out.println(frames + " fps, " + this.world.updates);
+                    //System.out.println(frames + " fps, " + this.world.updates);
                     this.world.updates = 0;
 
                     lastTime += 1000L;
