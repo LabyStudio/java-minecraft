@@ -81,7 +81,9 @@ public class Chunk {
                         int absoluteZ = this.z * SIZE + z;
 
                         Block block = Block.getById(typeId);
-                        block.render(tessellator, this.world, absoluteX, absoluteY, absoluteZ);
+                        if (block != null) {
+                            block.render(tessellator, this.world, absoluteX, absoluteY, absoluteZ);
+                        }
                     }
                 }
             }

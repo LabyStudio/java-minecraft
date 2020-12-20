@@ -4,6 +4,7 @@ package de.labystudio.game.world.chunk.format;
 import com.github.steveice10.opennbt.NBTIO;
 import com.github.steveice10.opennbt.tag.builtin.*;
 import de.labystudio.game.world.World;
+import de.labystudio.game.world.block.Block;
 import de.labystudio.game.world.chunk.Chunk;
 import de.labystudio.game.world.chunk.ChunkLayers;
 
@@ -41,33 +42,47 @@ public class ChunkFormat {
         for (int i = 0; i < sections.size(); i++) {
             CompoundTag section = sections.get(i);
 
-            byte y = (byte) section.get("Y").getValue();
+            try {
+                byte y = (byte) section.get("Y").getValue();
 
-            byte[] blocks = ((ByteArrayTag) section.get("Blocks")).getValue();
-            byte[] add = section.contains("Add") ? ((ByteArrayTag) section.get("Add")).getValue() : new byte[blocks.length];
-            byte[] blockLight = ((ByteArrayTag) section.get("BlockLight")).getValue();
-            // byte[] data = ((ByteArrayTag) section.get("Data")).getValue();
+                byte[] blocks = ((ByteArrayTag) section.get("Blocks")).getValue();
+                byte[] add = section.contains("Add") ? ((ByteArrayTag) section.get("Add")).getValue() : new byte[blocks.length];
+                byte[] blockLight = ((ByteArrayTag) section.get("BlockLight")).getValue();
+                byte[] skyLight = ((ByteArrayTag) section.get("SkyLight")).getValue();
+                // byte[] data = ((ByteArrayTag) section.get("Data")).getValue();
 
-            Chunk chunk = new Chunk(this.world, chunkX, y, chunkZ);
+                Chunk chunk = new Chunk(this.world, chunkX, y, chunkZ);
 
-            for (int relY = 0; relY < 16; relY++) {
-                for (int relX = 0; relX < 16; relX++) {
-                    for (int relZ = 0; relZ < 16; relZ++) {
-                        int index = (relY * 16 + relZ) * 16 + relX;
-                        int blockId = ((add[index] & 0xFF) << 4) | (blocks[index] & 0xFF);
-                        //int typeAndData = (add[index] << 8) | blockId | getHalfByte(index, data);
+                for (int relY = 0; relY < 16; relY++) {
+                    for (int relX = 0; relX < 16; relX++) {
+                        for (int relZ = 0; relZ < 16; relZ++) {
+                            int index = (relY * 16 + relZ) * 16 + relX;
+                            int blockId = ((add[index] & 0xFF) << 4) | (blocks[index] & 0xFF);
+                            //int typeAndData = (add[index] << 8) | blockId | getHalfByte(index, data);
 
-                        if (blockId != 0) {
-                            this.empty = false;
+                            // Combine sky light and block light
+                            int lightLevel = Math.max(getHalfByte(index, blockLight), getHalfByte(index, skyLight));
+
+                            if (blockId != 0) {
+                                this.empty = false;
+                            }
+
+                            // Invalid block, convert to stone
+                            if (blockId != 0 && Block.getById((short) blockId) == null) {
+                                blockId = Block.STONE.getId();
+                            }
+
+                            chunk.setBlockAt(relX, relY, relZ, blockId);
+                            chunk.setLightAt(relX, relY, relZ, lightLevel);
                         }
-
-                        chunk.setBlockAt(relX, relY, relZ, blockId);
-                        chunk.setLightAt(relX, relY, relZ, getHalfByte(index, blockLight));
                     }
                 }
-            }
 
-            this.chunks[y] = chunk;
+
+                this.chunks[y] = chunk;
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
 
         return this;
@@ -107,7 +122,8 @@ public class ChunkFormat {
             byte[] blockArray = new byte[4096];
             byte[] addArray = new byte[4096];
             byte[] lightArray = new byte[4096];
-            // byte[] dataArray = new byte[4096];
+            byte[] skyLightArray = new byte[4096];
+            //byte[] dataArray = new byte[4096];
 
             for (int relY = 0; relY < 16; relY++) {
                 for (int relX = 0; relX < 16; relX++) {
@@ -133,12 +149,13 @@ public class ChunkFormat {
             blocks.setValue(blockArray);
             add.setValue(addArray);
             blockLight.setValue(lightArray);
+            skyLight.setValue(skyLightArray);
             // data.setValue(dataArray);
 
             // Add to section
             section.put(blocks);
             section.put(add);
-            section.put(data);
+            //section.put(data);
             section.put(blockLight);
             section.put(skyLight);
 
