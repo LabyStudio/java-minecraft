@@ -38,7 +38,7 @@ public class Gui {
 
     public void renderCrosshair() {
         GL11.glEnable(GL11.GL_BLEND);
-        GL11.glBlendFunc(775, 769);
+        GL11.glBlendFunc(GL11.GL_ONE_MINUS_DST_COLOR, GL11.GL_ONE_MINUS_SRC_COLOR);
         GL11.glEnable(GL11.GL_TEXTURE_2D);
         GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
 

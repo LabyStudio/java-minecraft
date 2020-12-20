@@ -2,6 +2,7 @@ package de.labystudio.game.world;
 
 import de.labystudio.game.render.Frustum;
 import de.labystudio.game.render.GLAllocation;
+import de.labystudio.game.util.EnumWorldBlockLayer;
 import de.labystudio.game.util.Textures;
 import de.labystudio.game.world.chunk.Chunk;
 import de.labystudio.game.world.chunk.ChunkLayers;
@@ -11,7 +12,7 @@ import java.nio.FloatBuffer;
 
 public class WorldRenderer {
 
-    public static final int RENDER_DISTANCE = 8;
+    public static final int RENDER_DISTANCE = 4;
 
     private final World world;
     public final int textureId = Textures.loadTexture("/terrain.png", GL11.GL_NEAREST);
@@ -43,7 +44,7 @@ public class WorldRenderer {
         GL11.glFog(GL11.GL_FOG_COLOR, putColor(0.6222222F - 0.05F, 0.5F + 0.1F, 1.0F, 1.0F));
     }
 
-    public void render(int x, int z) {
+    public void render(int x, int z, EnumWorldBlockLayer renderLayer) {
         Frustum frustum = Frustum.getFrustum();
 
         for (ChunkLayers chunkLayers : this.world.chunks.values()) {
@@ -52,7 +53,7 @@ public class WorldRenderer {
 
             if (distanceX < RENDER_DISTANCE && distanceZ < RENDER_DISTANCE && frustum.cubeInFrustum(chunkLayers)) {
                 for (Chunk chunk : chunkLayers.getLayers()) {
-                    chunk.render(this);
+                    chunk.render(this, renderLayer);
                 }
             }
         }

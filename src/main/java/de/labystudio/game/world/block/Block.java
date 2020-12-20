@@ -14,6 +14,8 @@ public abstract class Block {
     public static BlockStone STONE = new BlockStone(1, 0);
     public static BlockGrass GRASS = new BlockGrass(2, 1);
     public static BlockDirt DIRT = new BlockDirt(3, 2);
+    public static BlockLog LOG = new BlockLog(4, 4);
+    public static BlockLeave LEAVE = new BlockLeave(5, 6);
 
     protected final int id;
     protected final int textureSlotId;
@@ -40,16 +42,29 @@ public abstract class Block {
         return this.textureSlotId;
     }
 
+    public boolean isTransparent() {
+        return getOpacity() < 1.0F;
+    }
+
+    public boolean isSolid() {
+        return true;
+    }
+
+    public float getOpacity() {
+        return 1.0F;
+    }
+
     public void render(Tessellator tessellator, World world, int x, int y, int z) {
         for (EnumBlockFace face : EnumBlockFace.values()) {
-            if (!world.isSolidBlockAt(x + face.x, y + face.y, z + face.z)) {
+            short typeId = world.getBlockAt(x + face.x, y + face.y, z + face.z);
+            if (typeId == 0 || Block.getById(typeId).isTransparent()) {
                 // Render face
                 renderFace(tessellator, world, face, x, y, z);
             }
         }
     }
 
-    public int getAverageLightLevelAt(World world, int x, int y, int z) {
+    private int getAverageLightLevelAt(World world, int x, int y, int z) {
         int totalLightLevel = 0;
         int totalBlocks = 0;
 
@@ -57,9 +72,10 @@ public abstract class Block {
         for (int offsetX = -1; offsetX <= 0; offsetX++) {
             for (int offsetY = -1; offsetY <= 0; offsetY++) {
                 for (int offsetZ = -1; offsetZ <= 0; offsetZ++) {
+                    short typeId = world.getBlockAt(x + offsetX, y + offsetY, z + offsetZ);
 
                     // Does it contain air?
-                    if (!world.isSolidBlockAt(x + offsetX, y + offsetY, z + offsetZ)) {
+                    if (typeId == 0 || Block.getById(typeId).isTransparent()) {
 
                         // Sum up the light levels
                         totalLightLevel += world.getLightAt(x + offsetX, y + offsetY, z + offsetZ);
@@ -73,7 +89,7 @@ public abstract class Block {
         return totalBlocks == 0 ? 0 : totalLightLevel / totalBlocks;
     }
 
-    public void setAverageColor(Tessellator tessellator, World world, EnumBlockFace face, int x, int y, int z) {
+    private void setAverageColor(Tessellator tessellator, World world, EnumBlockFace face, int x, int y, int z) {
         // Get the average light level of all 4 blocks at this corner
         int lightLevelAtThisCorner = getAverageLightLevelAt(world, x, y, z);
 
@@ -85,12 +101,12 @@ public abstract class Block {
         tessellator.setColorRGB_F(color, color, color);
     }
 
-    public void addBlockCorner(Tessellator tessellator, World world, EnumBlockFace face, int x, int y, int z, float u, float v) {
+    private void addBlockCorner(Tessellator tessellator, World world, EnumBlockFace face, int x, int y, int z, float u, float v) {
         setAverageColor(tessellator, world, face, x, y, z);
         tessellator.addVertexWithUV(x, y, z, u, v);
     }
 
-    public void renderFace(Tessellator tessellator, World world, EnumBlockFace face, int minX, int minY, int minZ) {
+    private void renderFace(Tessellator tessellator, World world, EnumBlockFace face, int minX, int minY, int minZ) {
         // Vertex mappings
         int maxX = minX + 1;
         int maxY = minY + 1;

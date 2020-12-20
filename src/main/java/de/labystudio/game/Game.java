@@ -2,6 +2,7 @@ package de.labystudio.game;
 
 import de.labystudio.game.player.Player;
 import de.labystudio.game.render.Gui;
+import de.labystudio.game.util.EnumWorldBlockLayer;
 import de.labystudio.game.util.AABB;
 import de.labystudio.game.util.EnumBlockFace;
 import de.labystudio.game.util.HitResult;
@@ -195,8 +196,15 @@ public class Game implements Runnable {
         GL11.glEnable(GL11.GL_FOG);
         this.worldRenderer.setupFog();
 
+        // Enable alpha
+        GL11.glEnable(GL11.GL_BLEND);
+        GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+        GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+
+
         // Render world
-        this.worldRenderer.render((int) this.player.x >> 4, (int) this.player.z >> 4);
+        this.worldRenderer.render((int) this.player.x >> 4, (int) this.player.z >> 4, EnumWorldBlockLayer.SOLID);
+        this.worldRenderer.render((int) this.player.x >> 4, (int) this.player.z >> 4, EnumWorldBlockLayer.CUTOUT);
 
         // Render selection
         if (hitResult != null) {
@@ -294,7 +302,7 @@ public class Game implements Runnable {
                 }
             }
 
-            if (this.world.isSolidBlockAt(hitX, hitY, hitZ)) {
+            if (this.world.getBlockAt(hitX, hitY, hitZ) != 0) {
                 if (targetFace == null) {
                     return null;
                 }

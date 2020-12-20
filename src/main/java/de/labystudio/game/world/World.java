@@ -2,6 +2,7 @@ package de.labystudio.game.world;
 
 import de.labystudio.game.util.AABB;
 import de.labystudio.game.util.EnumBlockFace;
+import de.labystudio.game.world.block.Block;
 import de.labystudio.game.world.chunk.Chunk;
 import de.labystudio.game.world.chunk.ChunkLayers;
 import de.labystudio.game.world.chunk.format.WorldFormat;
@@ -21,7 +22,7 @@ public class World {
     public boolean updateLightning = false;
     private final Queue<Long> lightUpdateQueue = new LinkedList<>();
 
-    private final WorldGenerator generator = new WorldGenerator(this, 12);
+    private final WorldGenerator generator = new WorldGenerator(this, (int) (System.currentTimeMillis() % 100000));
     public WorldFormat format = new WorldFormat(this, new File("saves/World1"));
 
     public World() {
@@ -36,16 +37,27 @@ public class World {
                 chunkLayers.setLayers(array);
                 chunkLayers.setDirty();
             });
+
+            this.updateLightning = true;
         } else {
+            int radius = 20;
+
             // Generator new spawn chunks
-            for (int x = -10; x <= 10; x++) {
-                for (int z = -10; z <= 10; z++) {
+            for (int x = -radius; x <= radius; x++) {
+                for (int z = -radius; z <= radius; z++) {
                     this.generator.generateChunk(x, z);
                 }
             }
-        }
 
-        this.updateLightning = true;
+            // Populate trees
+            for (int x = -radius; x <= radius; x++) {
+                for (int z = -radius; z <= radius; z++) {
+                    this.generator.populateChunk(x, z);
+                }
+            }
+
+            this.updateLightning = true;
+        }
     }
 
     public void save() {
@@ -75,7 +87,13 @@ public class World {
     }
 
     public boolean isSolidBlockAt(int x, int y, int z) {
-        return getBlockAt(x, y, z) != 0;
+        short typeId = getBlockAt(x, y, z);
+        return typeId != 0 && Block.getById(typeId).isSolid();
+    }
+
+    public boolean isTransparentBlockAt(int x, int y, int z) {
+        short typeId = getBlockAt(x, y, z);
+        return typeId == 0 || Block.getById(typeId).isTransparent();
     }
 
     public byte getBlockAt(int x, int y, int z) {
@@ -199,25 +217,34 @@ public class World {
 
     private void updateBlockLightsAtXZ(int x, int z) {
         boolean lightChanged = false;
-        boolean sun = true;
+        int skyLevel = 15;
 
         // Scan from the top to the bottom
         for (int y = TOTAL_HEIGHT; y >= 0; y--) {
-            if (isSolidBlockAt(x, y, z)) {
+            if (!isTransparentBlockAt(x, y, z)) {
                 // Sun is blocked because of solid block
-                sun = false;
+                skyLevel = 0;
             } else {
-                // Get previous and new light
-                float prevLight = getLightAt(x, y, z);
-                int light = sun ? 15 : calculateLightAt(x, y, z);
+                // Get opacity of this block
+                short typeId = getBlockAt(x, y, z);
+                float translucence = typeId == 0 ? 1.0F : 1.0F - Block.getById(typeId).getOpacity();
+
+                // Decrease strength of the skylight by the opacity of the block
+                skyLevel *= translucence;
+
+                // Get previous block light
+                float prevBlockLight = getLightAt(x, y, z);
+
+                // Combine skylight with the calculated block light and decrease strength by the opacity of the block
+                int blockLight = (int) (Math.max(skyLevel, calculateLightAt(x, y, z)) * translucence);
 
                 // Did one of the light change inside of the range?
-                if (prevLight != light) {
+                if (prevBlockLight != blockLight) {
                     lightChanged = true;
                 }
 
                 // Apply the new light to the block
-                setLightAt(x, y, z, light);
+                setLightAt(x, y, z, blockLight);
             }
         }
 
@@ -259,12 +286,21 @@ public class World {
         return true;
     }
 
+    public int getHighestBlockYAt(int x, int z) {
+        for (int y = TOTAL_HEIGHT; y > 0; y--) {
+            if (isSolidBlockAt(x, y, z)) {
+                return y;
+            }
+        }
+        return 0;
+    }
+
     private int calculateLightAt(int x, int y, int z) {
         int maxBrightness = 0;
 
         // Get maximal brightness of surround blocks
         for (EnumBlockFace face : EnumBlockFace.values()) {
-            if (!isSolidBlockAt(x + face.x, y + face.y, z + face.z)) {
+            if (isTransparentBlockAt(x + face.x, y + face.y, z + face.z)) {
                 int brightness = getLightAt(x + face.x, y + face.y, z + face.z);
 
                 maxBrightness = Math.max(maxBrightness, brightness);

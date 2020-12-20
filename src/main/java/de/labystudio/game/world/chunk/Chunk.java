@@ -1,6 +1,7 @@
 package de.labystudio.game.world.chunk;
 
 import de.labystudio.game.render.Tessellator;
+import de.labystudio.game.util.EnumWorldBlockLayer;
 import de.labystudio.game.world.World;
 import de.labystudio.game.world.WorldRenderer;
 import de.labystudio.game.world.block.Block;
@@ -28,7 +29,7 @@ public class Chunk {
         this.y = y;
         this.z = z;
 
-        this.lists = GL11.glGenLists(1);
+        this.lists = GL11.glGenLists(EnumWorldBlockLayer.values().length);
 
         // Fill chunk with light
         for (int lightX = 0; lightX < SIZE; lightX++) {
@@ -56,18 +57,23 @@ public class Chunk {
         return true;
     }
 
-    private void rebuild(WorldRenderer renderer) {
+    private void rebuild(WorldRenderer renderer, EnumWorldBlockLayer renderLayer) {
         // No longer dirty
         this.dirty = false;
 
         // Create GPU memory list storage
-        GL11.glNewList(this.lists, GL11.GL_COMPILE);
+        GL11.glNewList(this.lists + renderLayer.ordinal(), GL11.GL_COMPILE);
         GL11.glEnable(GL11.GL_TEXTURE_2D);
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, renderer.textureId);
 
         // Start rendering
         Tessellator tessellator = Tessellator.instance;
         tessellator.startDrawing(7);
+
+        // Enable alpha
+        if (renderLayer == EnumWorldBlockLayer.CUTOUT) {
+            GL11.glAlphaFunc(519, -1.0F);
+        }
 
         // Render blocks
         for (int x = 0; x < SIZE; x++) {
@@ -81,7 +87,7 @@ public class Chunk {
                         int absoluteZ = this.z * SIZE + z;
 
                         Block block = Block.getById(typeId);
-                        if (block != null) {
+                        if (block != null && ((renderLayer == EnumWorldBlockLayer.CUTOUT) == block.isTransparent())) {
                             block.render(tessellator, this.world, absoluteX, absoluteY, absoluteZ);
                         }
                     }
@@ -92,7 +98,7 @@ public class Chunk {
         // Stop rendering
         tessellator.draw();
 
-        // End storafe
+        // End storage
         GL11.glDisable(GL11.GL_TEXTURE_2D);
         GL11.glEndList();
     }
@@ -116,14 +122,19 @@ public class Chunk {
         this.blocks[index] = (byte) type;
     }
 
-    public void render(WorldRenderer renderer) {
+    public void render(WorldRenderer renderer, EnumWorldBlockLayer renderLayer) {
         if (this.dirty && this.world.updates < 16 * 50) {
             this.world.updates += 1;
             this.dirty = false;
 
-            rebuild(renderer);
+            // Rebuild all render layers
+            for (EnumWorldBlockLayer layer : EnumWorldBlockLayer.values()) {
+                rebuild(renderer, layer);
+            }
         }
-        GL11.glCallList(this.lists);
+
+        // Call list with render layer
+        GL11.glCallList(this.lists + renderLayer.ordinal());
     }
 
     public void setDirty() {
