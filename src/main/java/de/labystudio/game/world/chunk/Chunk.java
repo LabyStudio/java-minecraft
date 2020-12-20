@@ -67,7 +67,7 @@ public class Chunk {
 
         // Start rendering
         Tessellator tessellator = Tessellator.instance;
-        tessellator.startDrawing(4);
+        tessellator.startDrawing(7);
 
         // Render blocks
         for (int x = 0; x < SIZE; x++) {

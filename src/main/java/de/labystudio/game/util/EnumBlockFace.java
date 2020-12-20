@@ -17,4 +17,20 @@ public enum EnumBlockFace {
         this.y = y;
         this.z = z;
     }
+
+    public float getShading() {
+        return isXAxis() ? 0.6F : isYAxis() ? 1.0F : 0.8F;
+    }
+
+    public boolean isXAxis() {
+        return this.x != 0;
+    }
+
+    public boolean isYAxis() {
+        return this.y != 0;
+    }
+
+    public boolean isZAxis() {
+        return this.z != 0;
+    }
 }
