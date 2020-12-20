@@ -11,7 +11,7 @@ import java.nio.FloatBuffer;
 
 public class WorldRenderer {
 
-    public static final int RENDER_DISTANCE = 3;
+    public static final int RENDER_DISTANCE = 8;
 
     private final World world;
     public final int textureId = Textures.loadTexture("/terrain.png", GL11.GL_NEAREST);
@@ -39,8 +39,8 @@ public class WorldRenderer {
 
     public void setupFog() {
         GL11.glFogi(GL11.GL_FOG_MODE, GL11.GL_VIEWPORT_BIT);
-        GL11.glFogf(GL11.GL_FOG_DENSITY, 0.01F); // Fog distance
-        GL11.glFog(GL11.GL_FOG_COLOR, putColor(0.3F, 0.3F, 0.3F, 1.0F));
+        GL11.glFogf(GL11.GL_FOG_DENSITY, 0.005F); // Fog distance
+        GL11.glFog(GL11.GL_FOG_COLOR, putColor(0.6222222F - 0.05F, 0.5F + 0.1F, 1.0F, 1.0F));
     }
 
     public void render(int x, int z) {

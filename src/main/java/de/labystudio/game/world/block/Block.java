@@ -11,8 +11,9 @@ public abstract class Block {
 
     private static final Map<Short, Block> blocks = new HashMap<>();
 
-    public static Block STONE = new BlockStone(1, 0);
-    public static Block GRASS = new BlockGrass(2, 1);
+    public static BlockStone STONE = new BlockStone(1, 0);
+    public static BlockGrass GRASS = new BlockGrass(2, 1);
+    public static BlockDirt DIRT = new BlockDirt(3, 2);
 
     protected final int id;
     protected final int textureSlotId;

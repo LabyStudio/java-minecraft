@@ -2,10 +2,10 @@ package de.labystudio.game.world;
 
 import de.labystudio.game.util.AABB;
 import de.labystudio.game.util.EnumBlockFace;
-import de.labystudio.game.world.block.Block;
 import de.labystudio.game.world.chunk.Chunk;
 import de.labystudio.game.world.chunk.ChunkLayers;
 import de.labystudio.game.world.chunk.format.WorldFormat;
+import de.labystudio.game.world.generator.WorldGenerator;
 
 import java.io.File;
 import java.io.IOException;
@@ -21,6 +21,7 @@ public class World {
     public boolean updateLightning = false;
     private final Queue<Long> lightUpdateQueue = new LinkedList<>();
 
+    private final WorldGenerator generator = new WorldGenerator(this, 12);
     public WorldFormat format = new WorldFormat(this, new File("saves/World1"));
 
     public World() {
@@ -35,17 +36,11 @@ public class World {
                 chunkLayers.setLayers(array);
                 chunkLayers.setDirty();
             });
-
         } else {
-            int size = Chunk.SIZE * 10;
-            for (int x = -size; x < size; x++) {
-                for (int z = -size; z < size; z++) {
-                    long chunkIndex = (long) (x >> 4) & 4294967295L | ((long) (z >> 4) & 4294967295L) << 32;
-                    int chunkHeight = (int) (chunkIndex % 10);
-
-                    for (int y = 0; y < 64 - chunkHeight; y++) {
-                        setBlockAt(x, y, z, y == 64 - chunkHeight - 1 ? Block.GRASS.getId() : Block.STONE.getId());
-                    }
+            // Generator new spawn chunks
+            for (int x = -10; x <= 10; x++) {
+                for (int z = -10; z <= 10; z++) {
+                    this.generator.generateChunk(x, z);
                 }
             }
         }
@@ -227,7 +222,7 @@ public class World {
         }
 
         // Chain reaction, update next affected blocks
-        if (lightChanged && this.lightUpdateQueue.size() < 1000) {
+        if (lightChanged && this.lightUpdateQueue.size() < 512) {
             for (int offsetX = -1; offsetX <= 1; offsetX++) {
                 for (int offsetZ = -1; offsetZ <= 1; offsetZ++) {
                     long positionIndex = (long) (x + offsetX) << 32 | (z + offsetZ) & 0xFFFFFFFFL;

@@ -133,12 +133,12 @@ public class Game implements Runnable {
     }
 
     private void setupCamera(float partialTicks) {
-        int zFar = (WorldRenderer.RENDER_DISTANCE * 2) * Chunk.SIZE;
+        double zFar = Math.pow(WorldRenderer.RENDER_DISTANCE * Chunk.SIZE, 2);
 
         GL11.glMatrixMode(GL11.GL_PROJECTION);
         GL11.glLoadIdentity();
         GLU.gluPerspective(85.0F + this.player.getFOVModifier(),
-                (float) this.gameWindow.displayWidth / (float) this.gameWindow.displayHeight, 0.05F, zFar);
+                (float) this.gameWindow.displayWidth / (float) this.gameWindow.displayHeight, 0.05F, (float) zFar);
         GL11.glMatrixMode(GL11.GL_MODELVIEW);
         GL11.glLoadIdentity();
         moveCameraToPlayer(partialTicks);
@@ -195,10 +195,10 @@ public class Game implements Runnable {
         GL11.glEnable(GL11.GL_FOG);
         this.worldRenderer.setupFog();
 
-        GL11.glDisable(GL11.GL_FOG);
+        // Render world
         this.worldRenderer.render((int) this.player.x >> 4, (int) this.player.z >> 4);
-        GL11.glEnable(GL11.GL_FOG);
 
+        // Render selection
         if (hitResult != null) {
             renderSelection(hitResult);
         }
