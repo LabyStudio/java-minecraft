@@ -28,7 +28,7 @@ public class Chunk {
         this.y = y;
         this.z = z;
 
-        this.lists = GL11.glGenLists(2);
+        this.lists = GL11.glGenLists(1);
 
         // Fill chunk with light
         for (int lightX = 0; lightX < SIZE; lightX++) {
@@ -41,12 +41,27 @@ public class Chunk {
         }
     }
 
-    private void rebuild(WorldRenderer renderer, int layer) {
+    public boolean isEmpty() {
+        for (int x = 0; x < SIZE; x++) {
+            for (int y = 0; y < SIZE; y++) {
+                for (int z = 0; z < SIZE; z++) {
+                    int index = y << 8 | z << 4 | x;
+                    if (this.blocks[index] != 0) {
+                        return false;
+                    }
+                }
+            }
+        }
+
+        return true;
+    }
+
+    private void rebuild(WorldRenderer renderer) {
         // No longer dirty
         this.dirty = false;
 
         // Create GPU memory list storage
-        GL11.glNewList(this.lists + layer, GL11.GL_COMPILE);
+        GL11.glNewList(this.lists, GL11.GL_COMPILE);
         GL11.glEnable(GL11.GL_TEXTURE_2D);
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, renderer.textureId);
 
@@ -66,7 +81,7 @@ public class Chunk {
                         int absoluteZ = this.z * SIZE + z;
 
                         Block block = Block.getById(typeId);
-                        block.render(tessellator, this.world, layer, absoluteX, absoluteY, absoluteZ);
+                        block.render(tessellator, this.world, absoluteX, absoluteY, absoluteZ);
                     }
                 }
             }
@@ -99,16 +114,14 @@ public class Chunk {
         this.blocks[index] = (byte) type;
     }
 
-    public void render(WorldRenderer renderer, int layer) {
-        if (this.dirty && this.world.rebuiltThisFrame) {
+    public void render(WorldRenderer renderer) {
+        if (this.dirty && this.world.updates < 16 * 50) {
             this.world.updates += 1;
-            this.world.rebuiltThisFrame = false;
             this.dirty = false;
 
-            rebuild(renderer, 0);
-            rebuild(renderer, 1);
+            rebuild(renderer);
         }
-        GL11.glCallList(this.lists + layer);
+        GL11.glCallList(this.lists);
     }
 
     public void setDirty() {

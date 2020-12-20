@@ -7,10 +7,16 @@ version '1.0-SNAPSHOT'
 
 repositories {
     mavenCentral()
+
+    maven { url 'https://jitpack.io' }
 }
 
 dependencies {
     compile group: 'org.lwjgl.lwjgl', name: 'lwjgl', version: '2.9.3'
     compile group: 'org.lwjgl.lwjgl', name: 'lwjgl_util', version: '2.9.3'
     compile group: 'org.lwjgl.lwjgl', name: 'lwjgl-platform', version: '2.9.3', ext: 'pom'
+
+    // NBT
+    implementation 'com.github.Steveice10:opennbt:1.3'
+
 }

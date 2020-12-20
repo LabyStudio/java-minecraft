@@ -4,65 +4,61 @@ import de.labystudio.game.util.AABB;
 import de.labystudio.game.util.EnumBlockFace;
 import de.labystudio.game.world.block.Block;
 import de.labystudio.game.world.chunk.Chunk;
+import de.labystudio.game.world.chunk.ChunkLayers;
+import de.labystudio.game.world.chunk.format.WorldFormat;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.*;
 
 public class World {
 
     public static final int TOTAL_HEIGHT = Chunk.SIZE * 16 - 1;
-    public Map<Long, Chunk[]> chunks = new HashMap<>();
+    public Map<Long, ChunkLayers> chunks = new HashMap<>();
 
-    public boolean rebuiltThisFrame = true;
     public int updates = 0;
 
     public boolean updateLightning = false;
-    private Queue<Long> lightUpdateQueue = new LinkedList<>();
+    private final Queue<Long> lightUpdateQueue = new LinkedList<>();
+
+    public WorldFormat format = new WorldFormat(this, new File("saves/World1"));
 
     public World() {
         load();
     }
 
     public void load() {
-        /*
-        try {
-            DataInputStream dis = new DataInputStream(new GZIPInputStream(new FileInputStream(new File("level.dat"))));
-            dis.readFully(this.blocks);
-            calcLightDepths(0, 0, this.width, this.height);
-            for (int i = 0; i < this.worldListeners.size(); i++) {
-                ((WorldListener) this.worldListeners.get(i)).allChanged();
-            }
-            dis.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-         */
+        if (this.format.exists()) {
+            // Load chunks
+            this.format.load((x, z, array) -> {
+                ChunkLayers chunkLayers = getChunkLayersAt(x, z);
+                chunkLayers.setLayers(array);
+                chunkLayers.setDirty();
+            });
 
-        int size = Chunk.SIZE * 10;
-        for (int x = -size; x < size; x++) {
-            for (int z = -size; z < size; z++) {
-                long chunkIndex = (long) (x >> 4) & 4294967295L | ((long) (z >> 4) & 4294967295L) << 32;
-                int chunkHeight = (int) (chunkIndex % 10);
+        } else {
+            int size = Chunk.SIZE * 10;
+            for (int x = -size; x < size; x++) {
+                for (int z = -size; z < size; z++) {
+                    long chunkIndex = (long) (x >> 4) & 4294967295L | ((long) (z >> 4) & 4294967295L) << 32;
+                    int chunkHeight = (int) (chunkIndex % 10);
 
-                for (int y = 0; y < 64 - chunkHeight; y++) {
-                    setBlockAt(x, y, z, y == 64 - chunkHeight - 1 ? Block.GRASS.getId() : Block.STONE.getId());
+                    for (int y = 0; y < 64 - chunkHeight; y++) {
+                        setBlockAt(x, y, z, y == 64 - chunkHeight - 1 ? Block.GRASS.getId() : Block.STONE.getId());
+                    }
                 }
             }
         }
 
         this.updateLightning = true;
-        allChunksChanged();
     }
 
     public void save() {
-        /*
         try {
-            DataOutputStream dos = new DataOutputStream(new GZIPOutputStream(new FileOutputStream(new File("level.dat"))));
-            dos.write(this.blocks);
-            dos.close();
-        } catch (Exception e) {
+            this.format.saveChunks();
+        } catch (IOException e) {
             e.printStackTrace();
         }
-         */
     }
 
     public void onTick() {
@@ -92,21 +88,18 @@ public class World {
         return chunk == null ? 0 : chunk.getBlockAt(x & 15, y & 15, z & 15);
     }
 
-    public Chunk getChunkAt(int x, int y, int z) {
-        return getChunkLayersAt(x, z)[y];
+    public Chunk getChunkAt(int chunkX, int layerY, int chunkZ) {
+        return getChunkLayersAt(chunkX, chunkZ).getLayer(layerY);
     }
 
-    public Chunk[] getChunkLayersAt(int x, int z) {
+    public ChunkLayers getChunkLayersAt(int x, int z) {
         long chunkIndex = (long) x & 4294967295L | ((long) z & 4294967295L) << 32;
-        Chunk[] chunkLayers = this.chunks.get(chunkIndex);
+        ChunkLayers chunkLayers = this.chunks.get(chunkIndex);
         if (chunkLayers == null) {
-            chunkLayers = new Chunk[16];
-            for (int y = 0; y < 16; y++) {
-                chunkLayers[y] = new Chunk(this, x, y, z);
-            }
+            chunkLayers = new ChunkLayers(this, x, z);
 
             // Copy map because of ConcurrentModificationException
-            Map<Long, Chunk[]> chunks = new HashMap<>(this.chunks);
+            Map<Long, ChunkLayers> chunks = new HashMap<>(this.chunks);
             chunks.put(chunkIndex, chunkLayers);
             this.chunks = chunks;
         }
@@ -123,8 +116,8 @@ public class World {
     }
 
     public Chunk getChunkAtBlock(int x, int y, int z) {
-        Chunk[] chunkLayers = getChunkLayersAt(x >> 4, z >> 4);
-        return y < 0 || y > TOTAL_HEIGHT ? null : chunkLayers[y >> 4];
+        ChunkLayers chunkLayers = getChunkLayersAt(x >> 4, z >> 4);
+        return y < 0 || y > TOTAL_HEIGHT ? null : chunkLayers.getLayer(y >> 4);
     }
 
     public ArrayList<AABB> getCollisionBoxes(AABB aabb) {
@@ -176,10 +169,8 @@ public class World {
     }
 
     public void allChunksChanged() {
-        for (Chunk[] chunkLayers : this.chunks.values()) {
-            for (Chunk chunk : chunkLayers) {
-                chunk.setDirty();
-            }
+        for (ChunkLayers chunkLayers : this.chunks.values()) {
+            chunkLayers.setDirty();
         }
     }
 
@@ -236,7 +227,7 @@ public class World {
         }
 
         // Chain reaction, update next affected blocks
-        if (lightChanged) {
+        if (lightChanged && this.lightUpdateQueue.size() < 1000) {
             for (int offsetX = -1; offsetX <= 1; offsetX++) {
                 for (int offsetZ = -1; offsetZ <= 1; offsetZ++) {
                     long positionIndex = (long) (x + offsetX) << 32 | (z + offsetZ) & 0xFFFFFFFFL;

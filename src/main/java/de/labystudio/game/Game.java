@@ -30,6 +30,7 @@ public class Game implements Runnable {
 
     // States
     private boolean paused = false;
+    private boolean running = true;
 
     public void init() throws LWJGLException {
         // Setup display
@@ -46,15 +47,6 @@ public class Game implements Runnable {
         Keyboard.create();
         Mouse.create();
         Mouse.setGrabbed(true);
-    }
-
-    public void shutdown() {
-        this.world.save();
-
-        this.gameWindow.destroy();
-
-        Mouse.destroy();
-        Keyboard.destroy();
     }
 
     public void run() {
@@ -102,12 +94,23 @@ public class Game implements Runnable {
                     this.gameWindow.toggleFullscreen();
                 }
 
-            } while (!Display.isCloseRequested());
+            } while (!Display.isCloseRequested() && this.running);
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
-            shutdown();
+            // Shutdown
+            this.world.save();
+            this.gameWindow.destroy();
+
+            Mouse.destroy();
+            Keyboard.destroy();
+
+            System.exit(0);
         }
+    }
+
+    public void shutdown() {
+        this.running = false;
     }
 
     public void tick() {
@@ -193,9 +196,8 @@ public class Game implements Runnable {
         this.worldRenderer.setupFog();
 
         GL11.glDisable(GL11.GL_FOG);
-        this.worldRenderer.render((int) this.player.x >> 4, (int) this.player.z >> 4, 0);
+        this.worldRenderer.render((int) this.player.x >> 4, (int) this.player.z >> 4);
         GL11.glEnable(GL11.GL_FOG);
-        this.worldRenderer.render((int) this.player.x >> 4, (int) this.player.z >> 4, 1);
 
         if (hitResult != null) {
             renderSelection(hitResult);

@@ -4,6 +4,7 @@ import de.labystudio.game.render.Frustum;
 import de.labystudio.game.render.GLAllocation;
 import de.labystudio.game.util.Textures;
 import de.labystudio.game.world.chunk.Chunk;
+import de.labystudio.game.world.chunk.ChunkLayers;
 import org.lwjgl.opengl.GL11;
 
 import java.nio.FloatBuffer;
@@ -42,17 +43,16 @@ public class WorldRenderer {
         GL11.glFog(GL11.GL_FOG_COLOR, putColor(0.3F, 0.3F, 0.3F, 1.0F));
     }
 
-    public void render(int x, int z, int layer) {
-        this.world.rebuiltThisFrame = true;
+    public void render(int x, int z) {
         Frustum frustum = Frustum.getFrustum();
 
-        for (Chunk[] chunkLayers : this.world.chunks.values()) {
-            for (Chunk chunk : chunkLayers) {
-                int distanceX = Math.abs(x - chunk.x);
-                int distanceZ = Math.abs(z - chunk.z);
+        for (ChunkLayers chunkLayers : this.world.chunks.values()) {
+            int distanceX = Math.abs(x - chunkLayers.getX());
+            int distanceZ = Math.abs(z - chunkLayers.getZ());
 
-                if (distanceX < RENDER_DISTANCE && distanceZ < RENDER_DISTANCE && frustum.cubeInFrustum(chunk)) {
-                    chunk.render(this, layer);
+            if (distanceX < RENDER_DISTANCE && distanceZ < RENDER_DISTANCE && frustum.cubeInFrustum(chunkLayers)) {
+                for (Chunk chunk : chunkLayers.getLayers()) {
+                    chunk.render(this);
                 }
             }
         }

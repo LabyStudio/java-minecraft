@@ -2,7 +2,9 @@ package de.labystudio.game.render;
 
 import java.nio.FloatBuffer;
 
+import de.labystudio.game.world.World;
 import de.labystudio.game.world.chunk.Chunk;
+import de.labystudio.game.world.chunk.ChunkLayers;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 
@@ -207,5 +209,10 @@ public class Frustum {
     public boolean cubeInFrustum(Chunk chunk) {
         return cubeInFrustum(chunk.x * Chunk.SIZE, chunk.y * Chunk.SIZE, chunk.z * Chunk.SIZE,
                 chunk.x * Chunk.SIZE + Chunk.SIZE, chunk.y * Chunk.SIZE + Chunk.SIZE, chunk.z * Chunk.SIZE + Chunk.SIZE);
+    }
+
+    public boolean cubeInFrustum(ChunkLayers chunk) {
+        return cubeInFrustum(chunk.getX() * Chunk.SIZE, 0, chunk.getZ() * Chunk.SIZE,
+                chunk.getX() * Chunk.SIZE + Chunk.SIZE, World.TOTAL_HEIGHT, chunk.getZ() * Chunk.SIZE + Chunk.SIZE);
     }
 }

@@ -42,7 +42,7 @@ public class GameWindow {
         this.frame.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
-                System.exit(0);
+                game.shutdown();
             }
         });
     }

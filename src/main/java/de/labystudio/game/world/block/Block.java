@@ -39,7 +39,7 @@ public abstract class Block {
         return this.textureSlotId;
     }
 
-    public void render(Tessellator tessellator, World world, int layer, int x, int y, int z) {
+    public void render(Tessellator tessellator, World world, int x, int y, int z) {
         float color1 = 1.0F;
         float color2 = 0.8F;
         float color3 = 0.6F;
