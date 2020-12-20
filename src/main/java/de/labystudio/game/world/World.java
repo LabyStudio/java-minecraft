@@ -5,9 +5,7 @@ import de.labystudio.game.util.EnumBlockFace;
 import de.labystudio.game.world.block.Block;
 import de.labystudio.game.world.chunk.Chunk;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class World {
 
@@ -18,6 +16,7 @@ public class World {
     public int updates = 0;
 
     public boolean updateLightning = false;
+    private Queue<Long> lightUpdateQueue = new LinkedList<>();
 
     public World() {
         load();
@@ -64,6 +63,24 @@ public class World {
             e.printStackTrace();
         }
          */
+    }
+
+    public void onTick() {
+        // Light updates
+        if (!this.lightUpdateQueue.isEmpty()) {
+
+            // Handle 512 light updates per tick
+            for (int i = 0; i < 512; i++) {
+
+                // Get next position to update
+                Long positionIndex = this.lightUpdateQueue.poll();
+                if (positionIndex != null) {
+                    updateBlockLightsAtXZ((int) (positionIndex >> 32L), positionIndex.intValue());
+                } else {
+                    break;
+                }
+            }
+        }
     }
 
     public boolean isSolidBlockAt(int x, int y, int z) {
@@ -181,43 +198,70 @@ public class World {
 
     public void updateBlockLightAt(int x, int y, int z) {
         // Calculate brightness for target block
-        float brightness = isHighestBlockAt(x, y, z) ? 1.0F : calculateBrightnessAt(x, y, z);
+        int lightLevel = isHighestBlockAt(x, y, z) ? 15 : calculateLightAt(x, y, z);
 
         // Update target block light
-        getChunkAtBlock(x, y, z).setLightAt(x & 15, y & 15, z & 15, brightness);
+        getChunkAtBlock(x, y, z).setLightAt(x & 15, y & 15, z & 15, lightLevel);
 
         // Update block lights below the target block and the surrounding blocks
         for (int offsetX = -1; offsetX <= 1; offsetX++) {
             for (int offsetZ = -1; offsetZ <= 1; offsetZ++) {
-                updateBlockLightBelow(x + offsetX, y, z + offsetZ);
+                updateBlockLightsAtXZ(x + offsetX, z + offsetZ);
             }
         }
     }
 
-    private void updateBlockLightBelow(int x, int y, int z) {
-        // The brightness below the target block
-        float brightnessBelow = calculateBrightnessAt(x, y - 1, z);
-        float prevBrightnessBelow = getChunkAtBlock(x, y - 1, z).getBrightnessAt(x & 15, (y - 1) & 15, z & 15);
+    private void updateBlockLightsAtXZ(int x, int z) {
+        boolean lightChanged = false;
+        boolean sun = true;
 
-        // Update blocks below
-        for (int i = y - 1; i >= 0; i--) {
-            // A block is blocking the light
-            if (isSolidBlockAt(x, i, z)) {
-                break;
+        // Scan from the top to the bottom
+        for (int y = TOTAL_HEIGHT; y >= 0; y--) {
+            if (isSolidBlockAt(x, y, z)) {
+                // Sun is blocked because of solid block
+                sun = false;
             } else {
-                // Apply light from above
-                getChunkAtBlock(x, i, z).setLightAt(x & 15, i & 15, z & 15, brightnessBelow);
+                // Get previous and new light
+                float prevLight = getLightAt(x, y, z);
+                int light = sun ? 15 : calculateLightAt(x, y, z);
+
+                // Did one of the light change inside of the range?
+                if (prevLight != light) {
+                    lightChanged = true;
+                }
+
+                // Apply the new light to the block
+                setLightAt(x, y, z, light);
             }
         }
 
         // Chain reaction, update next affected blocks
-        //if (brightnessBelow != prevBrightnessBelow) {
-        //    for (int offsetX = -1; offsetX <= 1; offsetX++) {
-        //        for (int offsetZ = -1; offsetZ <= 1; offsetZ++) {
-                    //updateBlockLightBelow(x + offsetX, y, z + offsetZ);
-        //        }
-        //    }
-        //}
+        if (lightChanged) {
+            for (int offsetX = -1; offsetX <= 1; offsetX++) {
+                for (int offsetZ = -1; offsetZ <= 1; offsetZ++) {
+                    long positionIndex = (long) (x + offsetX) << 32 | (z + offsetZ) & 0xFFFFFFFFL;
+
+                    // Add block range to update queue
+                    if (!this.lightUpdateQueue.contains(positionIndex)) {
+                        this.lightUpdateQueue.add(positionIndex);
+                    }
+                }
+            }
+        }
+    }
+
+    private void setLightAt(int x, int y, int z, int light) {
+        Chunk chunk = getChunkAtBlock(x, y, z);
+        if (chunk != null) {
+            chunk.setLightAt(x & 15, y & 15, z & 15, light);
+
+            blockChanged(x, y, z);
+        }
+    }
+
+    public int getLightAt(int x, int y, int z) {
+        Chunk chunk = getChunkAtBlock(x, y, z);
+        return chunk == null ? 15 : chunk.getLightAt(x & 15, y & 15, z & 15);
     }
 
     private boolean isHighestBlockAt(int x, int y, int z) {
@@ -229,24 +273,19 @@ public class World {
         return true;
     }
 
-    private float calculateBrightnessAt(int x, int y, int z) {
-        float maxBrightness = 0;
+    private int calculateLightAt(int x, int y, int z) {
+        int maxBrightness = 0;
 
         // Get maximal brightness of surround blocks
         for (EnumBlockFace face : EnumBlockFace.values()) {
             if (!isSolidBlockAt(x + face.x, y + face.y, z + face.z)) {
-                float brightness = getBrightnessAtBlock(x + face.x, y + face.y, z + face.z);
+                int brightness = getLightAt(x + face.x, y + face.y, z + face.z);
 
                 maxBrightness = Math.max(maxBrightness, brightness);
             }
         }
 
-        // Decrease maximum brightness by 20%
-        return maxBrightness * 0.8F;
-    }
-
-    public float getBrightnessAtBlock(int x, int y, int z) {
-        Chunk chunk = getChunkAtBlock(x, y, z);
-        return chunk == null ? 0 : chunk.getBrightnessAt(x & 15, y & 15, z & 15);
+        // Decrease maximum brightness by 6%
+        return Math.max(0, maxBrightness - 1);
     }
 }

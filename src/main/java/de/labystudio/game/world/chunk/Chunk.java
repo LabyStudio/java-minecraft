@@ -35,7 +35,7 @@ public class Chunk {
             for (int lightY = 0; lightY < SIZE; lightY++) {
                 for (int lightZ = 0; lightZ < SIZE; lightZ++) {
                     int index = lightY << 8 | lightZ << 4 | lightX;
-                    this.blockLight[index] = 127;
+                    this.blockLight[index] = 15;
                 }
             }
         }
@@ -89,9 +89,9 @@ public class Chunk {
         return this.blocks[index];
     }
 
-    public void setLightAt(int x, int y, int z, float brightness) {
+    public void setLightAt(int x, int y, int z, int lightLevel) {
         int index = y << 8 | z << 4 | x;
-        this.blockLight[index] = (byte) (127 * brightness);
+        this.blockLight[index] = (byte) lightLevel;
     }
 
     public void setBlockAt(int x, int y, int z, int type) {
@@ -115,8 +115,8 @@ public class Chunk {
         this.dirty = true;
     }
 
-    public float getBrightnessAt(int x, int y, int z) {
+    public int getLightAt(int x, int y, int z) {
         int index = y << 8 | z << 4 | x;
-        return 1.0F / 127F * this.blockLight[index];
+        return this.blockLight[index];
     }
 }

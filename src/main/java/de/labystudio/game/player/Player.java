@@ -79,7 +79,7 @@ public class Player {
         }
     }
 
-    public void tick() {
+    public void onTick() {
         float prevMoveForward = this.moveForward;
         boolean prevJumping = this.jumping;
 

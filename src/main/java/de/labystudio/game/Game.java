@@ -111,7 +111,8 @@ public class Game implements Runnable {
     }
 
     public void tick() {
-        this.player.tick();
+        this.player.onTick();
+        this.world.onTick();
     }
 
     private void moveCameraToPlayer(float partialTicks) {

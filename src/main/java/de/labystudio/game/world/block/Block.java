@@ -46,7 +46,7 @@ public abstract class Block {
 
         for (EnumBlockFace face : EnumBlockFace.values()) {
             if (!world.isSolidBlockAt(x + face.x, y + face.y, z + face.z)) {
-                float brightness = world.getBrightnessAtBlock(x + face.x, y + face.y, z + face.z);
+                float brightness = 1.0F / 15.0F * world.getLightAt(x + face.x, y + face.y, z + face.z);
                 renderFace(tessellator, face, x, y, z, color1 * brightness, color2 * brightness, color3 * brightness);
             }
         }
