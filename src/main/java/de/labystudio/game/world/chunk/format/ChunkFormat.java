@@ -5,8 +5,8 @@ import com.github.steveice10.opennbt.NBTIO;
 import com.github.steveice10.opennbt.tag.builtin.*;
 import de.labystudio.game.world.World;
 import de.labystudio.game.world.block.Block;
+import de.labystudio.game.world.chunk.ChunkSection;
 import de.labystudio.game.world.chunk.Chunk;
-import de.labystudio.game.world.chunk.ChunkLayers;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -14,7 +14,7 @@ import java.util.List;
 
 public class ChunkFormat {
 
-    private Chunk[] chunks = new Chunk[16];
+    private ChunkSection[] chunkSections = new ChunkSection[16];
 
     private World world;
     private int x;
@@ -51,7 +51,7 @@ public class ChunkFormat {
                 byte[] skyLight = ((ByteArrayTag) section.get("SkyLight")).getValue();
                 // byte[] data = ((ByteArrayTag) section.get("Data")).getValue();
 
-                Chunk chunk = new Chunk(this.world, chunkX, y, chunkZ);
+                ChunkSection chunkSection = new ChunkSection(this.world, chunkX, y, chunkZ);
 
                 for (int relY = 0; relY < 16; relY++) {
                     for (int relX = 0; relX < 16; relX++) {
@@ -72,14 +72,14 @@ public class ChunkFormat {
                                 blockId = Block.STONE.getId();
                             }
 
-                            chunk.setBlockAt(relX, relY, relZ, blockId);
-                            chunk.setLightAt(relX, relY, relZ, lightLevel);
+                            chunkSection.setBlockAt(relX, relY, relZ, blockId);
+                            chunkSection.setLightAt(relX, relY, relZ, lightLevel);
                         }
                     }
                 }
 
 
-                this.chunks[y] = chunk;
+                this.chunkSections[y] = chunkSection;
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -96,10 +96,10 @@ public class ChunkFormat {
         bytes[index / 2] = (byte) ((bytes[index / 2] &= 0xF << (index % 2 == 0 ? 4 : 0)) | (value & 0xF) << (index % 2 == 0 ? 0 : 4));
     }
 
-    public static void write(ChunkLayers chunkLayers, DataOutputStream dataOutputStream) throws IOException {
+    public static void write(Chunk chunk, DataOutputStream dataOutputStream) throws IOException {
         List<Tag> sectionList = new ArrayList<Tag>();
         for (byte y = 0; y < 16; y++) {
-            Chunk chunkSection = chunkLayers.getLayer(y);
+            ChunkSection chunkSection = chunk.getSection(y);
 
             // Skip empty chunks
             if (chunkSection == null || chunkSection.isEmpty()) {
@@ -177,8 +177,8 @@ public class ChunkFormat {
         NBTIO.writeTag((OutputStream) dataOutputStream, root);
     }
 
-    public Chunk[] getChunks() {
-        return chunks;
+    public ChunkSection[] getChunks() {
+        return chunkSections;
     }
 
     public int getX() {

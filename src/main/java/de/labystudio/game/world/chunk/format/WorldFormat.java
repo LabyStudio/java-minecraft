@@ -1,8 +1,8 @@
 package de.labystudio.game.world.chunk.format;
 
 import de.labystudio.game.world.World;
+import de.labystudio.game.world.chunk.ChunkSection;
 import de.labystudio.game.world.chunk.Chunk;
-import de.labystudio.game.world.chunk.ChunkLayers;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -65,12 +65,12 @@ public class WorldFormat {
                             // Read chunk layers
                             ChunkFormat chunkFormat = new ChunkFormat(this.world, x, z).read(inputStream, chunkX, chunkZ);
                             if (!chunkFormat.isEmpty()) {
-                                Chunk[] layers = chunkFormat.getChunks();
+                                ChunkSection[] layers = chunkFormat.getChunks();
 
                                 // Fill empty chunks with chunk objects
                                 for (int y = 0; y < 16; y++) {
                                     if (layers[y] == null) {
-                                        layers[y] = new Chunk(this.world, chunkX, y, chunkZ);
+                                        layers[y] = new ChunkSection(this.world, chunkX, y, chunkZ);
                                     }
                                 }
 
@@ -98,13 +98,13 @@ public class WorldFormat {
         List<Long> regionsToSave = new ArrayList<Long>();
 
         // Get all regions to save
-        for (ChunkLayers chunkLayers : this.world.chunks.values()) {
-            if (chunkLayers.isEmpty())
+        for (Chunk chunk : this.world.chunks.values()) {
+            if (chunk.isEmpty())
                 continue;
 
             // Get region coordinates of this chunk
-            int regionX = chunkLayers.getX() >> 5;
-            int regionZ = chunkLayers.getZ() >> 5;
+            int regionX = chunk.getX() >> 5;
+            int regionZ = chunk.getZ() >> 5;
 
             // Create an id of this region coordinate
             long regionId = ((long) regionX) << 32L | regionZ & 0xFFFFFFFFL;
@@ -135,7 +135,7 @@ public class WorldFormat {
 
                     if (this.world.isChunkLoaded(chunkX, chunkZ)) {
                         // Get chunk
-                        ChunkLayers chunk = this.world.getChunkLayersAt(chunkX, chunkZ);
+                        Chunk chunk = this.world.getChunkAt(chunkX, chunkZ);
 
                         // Write
                         if (!chunk.isEmpty()) {

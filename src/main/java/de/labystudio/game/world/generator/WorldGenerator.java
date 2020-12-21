@@ -2,7 +2,7 @@ package de.labystudio.game.world.generator;
 
 import de.labystudio.game.world.World;
 import de.labystudio.game.world.block.Block;
-import de.labystudio.game.world.chunk.Chunk;
+import de.labystudio.game.world.chunk.ChunkSection;
 import de.labystudio.game.world.generator.noise.NoiseGeneratorCombined;
 import de.labystudio.game.world.generator.noise.NoiseGeneratorOctaves;
 
@@ -39,12 +39,12 @@ public final class WorldGenerator {
 
     public void generateChunk(int chunkX, int chunkZ) {
         // For each block in the chunk
-        for (int x = 0; x < Chunk.SIZE; x++) {
-            for (int z = 0; z < Chunk.SIZE; z++) {
+        for (int x = 0; x < ChunkSection.SIZE; x++) {
+            for (int z = 0; z < ChunkSection.SIZE; z++) {
 
                 // Absolute position of the block
-                int absoluteX = chunkX * Chunk.SIZE + x;
-                int absoluteZ = chunkZ * Chunk.SIZE + z;
+                int absoluteX = chunkX * ChunkSection.SIZE + x;
+                int absoluteZ = chunkZ * ChunkSection.SIZE + z;
 
                 // Extract height value of the noise
                 double heightValue = this.groundHeightNoise.perlin(absoluteX, absoluteZ);
@@ -80,12 +80,12 @@ public final class WorldGenerator {
 
     public void populateChunk(int chunkX, int chunkZ) {
         for (int index = 0; index < 10; index++) {
-            int x = this.random.nextInt(Chunk.SIZE);
-            int z = this.random.nextInt(Chunk.SIZE);
+            int x = this.random.nextInt(ChunkSection.SIZE);
+            int z = this.random.nextInt(ChunkSection.SIZE);
 
             // Absolute position of the block
-            int absoluteX = chunkX * Chunk.SIZE + x;
-            int absoluteZ = chunkZ * Chunk.SIZE + z;
+            int absoluteX = chunkX * ChunkSection.SIZE + x;
+            int absoluteZ = chunkZ * ChunkSection.SIZE + z;
 
             // Use noise for a forest pattern
             double perlin = this.forestNoise.perlin(absoluteX * 10, absoluteZ * 10);

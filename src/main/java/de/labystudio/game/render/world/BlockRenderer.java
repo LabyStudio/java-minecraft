@@ -14,16 +14,17 @@ public class BlockRenderer {
     private final Tessellator tessellator = Tessellator.instance;
 
     public void renderBlock(IWorldAccess world, Block block, int x, int y, int z) {
+        AABB boundingBox = block.getBoundingBox(world, x, y, z);
+
         // Render faces
         for (EnumBlockFace face : EnumBlockFace.values()) {
             if (block.shouldRenderFace(world, x, y, z, face)) {
-                renderFace(world, block, face, x, y, z);
+                renderFace(world, block, boundingBox, face, x, y, z);
             }
         }
     }
 
-    public void renderFace(IWorldAccess world, Block block, EnumBlockFace face, int x, int y, int z) {
-        AABB boundingBox = block.getBoundingBox();
+    public void renderFace(IWorldAccess world, Block block, AABB boundingBox, EnumBlockFace face, int x, int y, int z) {
 
         // Vertex mappings
         double minX = x + boundingBox.minX;
@@ -142,7 +143,7 @@ public class BlockRenderer {
     }
 
     public void drawBoundingBox(double minX, double minY, double minZ,
-                                 double maxX, double maxY, double maxZ) {
+                                double maxX, double maxY, double maxZ) {
 
         // Bottom
         GL11.glBegin(GL11.GL_LINE_LOOP);

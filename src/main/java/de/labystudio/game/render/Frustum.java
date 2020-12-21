@@ -1,67 +1,51 @@
 package de.labystudio.game.render;
 
-import java.nio.FloatBuffer;
-
+import de.labystudio.game.util.AABB;
 import de.labystudio.game.world.World;
 import de.labystudio.game.world.chunk.Chunk;
-import de.labystudio.game.world.chunk.ChunkLayers;
+import de.labystudio.game.world.chunk.ChunkSection;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 
-import de.labystudio.game.util.AABB;
+import java.nio.FloatBuffer;
 
 public class Frustum {
+
     public float[][] m_Frustum = new float[6][4];
+
     public static final int RIGHT = 0;
     public static final int LEFT = 1;
     public static final int BOTTOM = 2;
     public static final int TOP = 3;
     public static final int BACK = 4;
     public static final int FRONT = 5;
+
     public static final int A = 0;
     public static final int B = 1;
     public static final int C = 2;
     public static final int D = 3;
-    private static Frustum frustum = new Frustum();
 
-    public static Frustum getFrustum() {
-        frustum.calculateFrustum();
-        return frustum;
-    }
+    private final FloatBuffer _proj = BufferUtils.createFloatBuffer(16);
+    private final FloatBuffer _modl = BufferUtils.createFloatBuffer(16);
+    private final FloatBuffer _clip = BufferUtils.createFloatBuffer(16);
 
-    private void normalizePlane(float[][] frustum, int side) {
-        float magnitude = (float) Math.sqrt(frustum[side][0] * frustum[side][0] + frustum[side][1] * frustum[side][1] + frustum[side][2] * frustum[side][2]);
+    private final float[] proj = new float[16];
+    private final float[] modl = new float[16];
+    private final float[] clip = new float[16];
 
-
-        frustum[side][0] /= magnitude;
-        frustum[side][1] /= magnitude;
-        frustum[side][2] /= magnitude;
-        frustum[side][3] /= magnitude;
-    }
-
-    private FloatBuffer _proj = BufferUtils.createFloatBuffer(16);
-    private FloatBuffer _modl = BufferUtils.createFloatBuffer(16);
-    private FloatBuffer _clip = BufferUtils.createFloatBuffer(16);
-    float[] proj = new float[16];
-    float[] modl = new float[16];
-    float[] clip = new float[16];
-
-    private void calculateFrustum() {
+    public void update() {
         this._proj.clear();
         this._modl.clear();
         this._clip.clear();
 
-
+        // Get current camera position
         GL11.glGetFloat(2983, this._proj);
-
-
         GL11.glGetFloat(2982, this._modl);
 
         this._proj.flip().limit(16);
         this._proj.get(this.proj);
         this._modl.flip().limit(16);
         this._modl.get(this.modl);
-
 
         this.clip[0] = (this.modl[0] * this.proj[0] + this.modl[1] * this.proj[4] + this.modl[2] * this.proj[8] + this.modl[3] * this.proj[12]);
         this.clip[1] = (this.modl[0] * this.proj[1] + this.modl[1] * this.proj[5] + this.modl[2] * this.proj[9] + this.modl[3] * this.proj[13]);
@@ -89,54 +73,53 @@ public class Frustum {
         this.m_Frustum[0][2] = (this.clip[11] - this.clip[8]);
         this.m_Frustum[0][3] = (this.clip[15] - this.clip[12]);
 
-
         normalizePlane(this.m_Frustum, 0);
-
 
         this.m_Frustum[1][0] = (this.clip[3] + this.clip[0]);
         this.m_Frustum[1][1] = (this.clip[7] + this.clip[4]);
         this.m_Frustum[1][2] = (this.clip[11] + this.clip[8]);
         this.m_Frustum[1][3] = (this.clip[15] + this.clip[12]);
 
-
         normalizePlane(this.m_Frustum, 1);
-
 
         this.m_Frustum[2][0] = (this.clip[3] + this.clip[1]);
         this.m_Frustum[2][1] = (this.clip[7] + this.clip[5]);
         this.m_Frustum[2][2] = (this.clip[11] + this.clip[9]);
         this.m_Frustum[2][3] = (this.clip[15] + this.clip[13]);
 
-
         normalizePlane(this.m_Frustum, 2);
-
 
         this.m_Frustum[3][0] = (this.clip[3] - this.clip[1]);
         this.m_Frustum[3][1] = (this.clip[7] - this.clip[5]);
         this.m_Frustum[3][2] = (this.clip[11] - this.clip[9]);
         this.m_Frustum[3][3] = (this.clip[15] - this.clip[13]);
 
-
         normalizePlane(this.m_Frustum, 3);
-
 
         this.m_Frustum[4][0] = (this.clip[3] - this.clip[2]);
         this.m_Frustum[4][1] = (this.clip[7] - this.clip[6]);
         this.m_Frustum[4][2] = (this.clip[11] - this.clip[10]);
         this.m_Frustum[4][3] = (this.clip[15] - this.clip[14]);
 
-
         normalizePlane(this.m_Frustum, 4);
-
 
         this.m_Frustum[5][0] = (this.clip[3] + this.clip[2]);
         this.m_Frustum[5][1] = (this.clip[7] + this.clip[6]);
         this.m_Frustum[5][2] = (this.clip[11] + this.clip[10]);
         this.m_Frustum[5][3] = (this.clip[15] + this.clip[14]);
 
-
         normalizePlane(this.m_Frustum, 5);
     }
+
+    private void normalizePlane(float[][] frustum, int side) {
+        float magnitude = (float) Math.sqrt(frustum[side][0] * frustum[side][0] + frustum[side][1] * frustum[side][1] + frustum[side][2] * frustum[side][2]);
+
+        frustum[side][0] /= magnitude;
+        frustum[side][1] /= magnitude;
+        frustum[side][2] /= magnitude;
+        frustum[side][3] /= magnitude;
+    }
+
 
     public boolean pointInFrustum(float x, float y, float z) {
         for (int i = 0; i < 6; i++) {
@@ -206,13 +189,13 @@ public class Frustum {
         return cubeInFrustum(aabb.minX, aabb.minY, aabb.minZ, aabb.maxX, aabb.maxY, aabb.maxZ);
     }
 
-    public boolean cubeInFrustum(Chunk chunk) {
-        return cubeInFrustum(chunk.x * Chunk.SIZE, chunk.y * Chunk.SIZE, chunk.z * Chunk.SIZE,
-                chunk.x * Chunk.SIZE + Chunk.SIZE, chunk.y * Chunk.SIZE + Chunk.SIZE, chunk.z * Chunk.SIZE + Chunk.SIZE);
+    public boolean cubeInFrustum(ChunkSection chunkSection) {
+        return cubeInFrustum(chunkSection.x * ChunkSection.SIZE, chunkSection.y * ChunkSection.SIZE, chunkSection.z * ChunkSection.SIZE,
+                chunkSection.x * ChunkSection.SIZE + ChunkSection.SIZE, chunkSection.y * ChunkSection.SIZE + ChunkSection.SIZE, chunkSection.z * ChunkSection.SIZE + ChunkSection.SIZE);
     }
 
-    public boolean cubeInFrustum(ChunkLayers chunk) {
-        return cubeInFrustum(chunk.getX() * Chunk.SIZE, 0, chunk.getZ() * Chunk.SIZE,
-                chunk.getX() * Chunk.SIZE + Chunk.SIZE, World.TOTAL_HEIGHT, chunk.getZ() * Chunk.SIZE + Chunk.SIZE);
+    public boolean cubeInFrustum(Chunk chunk) {
+        return cubeInFrustum(chunk.getX() * ChunkSection.SIZE, 0, chunk.getZ() * ChunkSection.SIZE,
+                chunk.getX() * ChunkSection.SIZE + ChunkSection.SIZE, World.TOTAL_HEIGHT, chunk.getZ() * ChunkSection.SIZE + ChunkSection.SIZE);
     }
 }

@@ -65,8 +65,8 @@ public abstract class Block {
         return 1.0F;
     }
 
-    public AABB getBoundingBox() {
-        return boundingBox;
+    public AABB getBoundingBox(IWorldAccess world, int x, int y, int z) {
+        return this.boundingBox;
     }
 
     public void render(WorldRenderer worldRenderer, IWorldAccess world, int x, int y, int z) {

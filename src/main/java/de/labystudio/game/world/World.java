@@ -1,11 +1,12 @@
 package de.labystudio.game.world;
 
+import de.labystudio.game.Game;
 import de.labystudio.game.render.world.IWorldAccess;
 import de.labystudio.game.util.AABB;
 import de.labystudio.game.util.EnumBlockFace;
 import de.labystudio.game.world.block.Block;
 import de.labystudio.game.world.chunk.Chunk;
-import de.labystudio.game.world.chunk.ChunkLayers;
+import de.labystudio.game.world.chunk.ChunkSection;
 import de.labystudio.game.world.chunk.format.WorldFormat;
 import de.labystudio.game.world.generator.WorldGenerator;
 
@@ -15,10 +16,8 @@ import java.util.*;
 
 public class World implements IWorldAccess {
 
-    public static final int TOTAL_HEIGHT = Chunk.SIZE * 16 - 1;
-    public Map<Long, ChunkLayers> chunks = new HashMap<>();
-
-    public int updates = 0;
+    public static final int TOTAL_HEIGHT = ChunkSection.SIZE * 16 - 1;
+    public Map<Long, Chunk> chunks = new HashMap<>();
 
     public boolean updateLightning = false;
     private final Queue<Long> lightUpdateQueue = new LinkedList<>();
@@ -34,9 +33,9 @@ public class World implements IWorldAccess {
         if (this.format.exists()) {
             // Load chunks
             this.format.load((x, z, array) -> {
-                ChunkLayers chunkLayers = getChunkLayersAt(x, z);
-                chunkLayers.setLayers(array);
-                chunkLayers.setDirty();
+                Chunk chunk = getChunkAt(x, z);
+                chunk.setSections(array);
+                chunk.queueForRebuild();
             });
 
             this.updateLightning = true;
@@ -87,54 +86,6 @@ public class World implements IWorldAccess {
         }
     }
 
-    public boolean isSolidBlockAt(int x, int y, int z) {
-        short typeId = getBlockAt(x, y, z);
-        return typeId != 0 && Block.getById(typeId).isSolid();
-    }
-
-    public boolean isTransparentBlockAt(int x, int y, int z) {
-        short typeId = getBlockAt(x, y, z);
-        return typeId == 0 || Block.getById(typeId).isTransparent();
-    }
-
-    @Override
-    public short getBlockAt(int x, int y, int z) {
-        Chunk chunk = getChunkAtBlock(x, y, z);
-        return chunk == null ? 0 : chunk.getBlockAt(x & 15, y & 15, z & 15);
-    }
-
-    public Chunk getChunkAt(int chunkX, int layerY, int chunkZ) {
-        return getChunkLayersAt(chunkX, chunkZ).getLayer(layerY);
-    }
-
-    public ChunkLayers getChunkLayersAt(int x, int z) {
-        long chunkIndex = (long) x & 4294967295L | ((long) z & 4294967295L) << 32;
-        ChunkLayers chunkLayers = this.chunks.get(chunkIndex);
-        if (chunkLayers == null) {
-            chunkLayers = new ChunkLayers(this, x, z);
-
-            // Copy map because of ConcurrentModificationException
-            Map<Long, ChunkLayers> chunks = new HashMap<>(this.chunks);
-            chunks.put(chunkIndex, chunkLayers);
-            this.chunks = chunks;
-        }
-        return chunkLayers;
-    }
-
-    public boolean isChunkLoaded(int x, int z) {
-        long chunkIndex = (long) x & 4294967295L | ((long) z & 4294967295L) << 32;
-        return this.chunks.containsKey(chunkIndex);
-    }
-
-    public boolean isChunkLoadedAt(int x, int y, int z) {
-        return isChunkLoaded(x >> 4, z >> 4);
-    }
-
-    public Chunk getChunkAtBlock(int x, int y, int z) {
-        ChunkLayers chunkLayers = getChunkLayersAt(x >> 4, z >> 4);
-        return y < 0 || y > TOTAL_HEIGHT ? null : chunkLayers.getLayer(y >> 4);
-    }
-
     public ArrayList<AABB> getCollisionBoxes(AABB aabb) {
         ArrayList<AABB> aABBs = new ArrayList<>();
 
@@ -161,6 +112,12 @@ public class World implements IWorldAccess {
         setDirty(x - 1, y - 1, z - 1, x + 1, y + 1, z + 1);
     }
 
+    public void allChunksChanged() {
+        for (Chunk chunk : this.chunks.values()) {
+            chunk.queueForRebuild();
+        }
+    }
+
     public void setDirty(int minX, int minY, int minZ, int maxX, int maxY, int maxZ) {
         // To chunk coordinates
         minX = minX >> 4;
@@ -177,22 +134,16 @@ public class World implements IWorldAccess {
         for (int x = minX; x <= maxX; x++) {
             for (int y = minY; y <= maxY; y++) {
                 for (int z = minZ; z <= maxZ; z++) {
-                    getChunkAt(x, y, z).setDirty();
+                    getChunkAt(x, y, z).queueForRebuild();
                 }
             }
         }
     }
 
-    public void allChunksChanged() {
-        for (ChunkLayers chunkLayers : this.chunks.values()) {
-            chunkLayers.setDirty();
-        }
-    }
-
     public void setBlockAt(int x, int y, int z, int type) {
-        Chunk chunk = getChunkAtBlock(x, y, z);
-        if (chunk != null) {
-            chunk.setBlockAt(x & 15, y & 15, z & 15, type);
+        ChunkSection chunkSection = getChunkAtBlock(x, y, z);
+        if (chunkSection != null) {
+            chunkSection.setBlockAt(x & 15, y & 15, z & 15, type);
 
             if (this.updateLightning) {
                 updateBlockLightAt(x, y, z);
@@ -266,18 +217,17 @@ public class World implements IWorldAccess {
     }
 
     private void setLightAt(int x, int y, int z, int light) {
-        Chunk chunk = getChunkAtBlock(x, y, z);
-        if (chunk != null) {
-            chunk.setLightAt(x & 15, y & 15, z & 15, light);
-
-            blockChanged(x, y, z);
+        ChunkSection chunkSection = getChunkAtBlock(x, y, z);
+        if (chunkSection != null) {
+            chunkSection.setLightAt(x & 15, y & 15, z & 15, light);
+            chunkSection.queueForRebuild();
         }
     }
 
     @Override
     public int getLightAt(int x, int y, int z) {
-        Chunk chunk = getChunkAtBlock(x, y, z);
-        return chunk == null ? 15 : chunk.getLightAt(x & 15, y & 15, z & 15);
+        ChunkSection chunkSection = getChunkAtBlock(x, y, z);
+        return chunkSection == null ? 15 : chunkSection.getLightAt(x & 15, y & 15, z & 15);
     }
 
     private boolean isHighestBlockAt(int x, int y, int z) {
@@ -312,5 +262,53 @@ public class World implements IWorldAccess {
 
         // Decrease maximum brightness by 6%
         return Math.max(0, maxBrightness - 1);
+    }
+
+    public boolean isSolidBlockAt(int x, int y, int z) {
+        short typeId = getBlockAt(x, y, z);
+        return typeId != 0 && Block.getById(typeId).isSolid();
+    }
+
+    public boolean isTransparentBlockAt(int x, int y, int z) {
+        short typeId = getBlockAt(x, y, z);
+        return typeId == 0 || Block.getById(typeId).isTransparent();
+    }
+
+    @Override
+    public short getBlockAt(int x, int y, int z) {
+        ChunkSection chunkSection = getChunkAtBlock(x, y, z);
+        return chunkSection == null ? 0 : chunkSection.getBlockAt(x & 15, y & 15, z & 15);
+    }
+
+    public ChunkSection getChunkAt(int chunkX, int layerY, int chunkZ) {
+        return getChunkAt(chunkX, chunkZ).getSection(layerY);
+    }
+
+    public Chunk getChunkAt(int x, int z) {
+        long chunkIndex = Chunk.getIndex(x, z);
+        Chunk chunk = this.chunks.get(chunkIndex);
+        if (chunk == null) {
+            chunk = new Chunk(this, x, z);
+
+            // Copy map because of ConcurrentModificationException
+            Map<Long, Chunk> chunks = new HashMap<>(this.chunks);
+            chunks.put(chunkIndex, chunk);
+            this.chunks = chunks;
+        }
+        return chunk;
+    }
+
+    public boolean isChunkLoaded(int x, int z) {
+        long chunkIndex = (long) x & 4294967295L | ((long) z & 4294967295L) << 32;
+        return this.chunks.containsKey(chunkIndex);
+    }
+
+    public boolean isChunkLoadedAt(int x, int y, int z) {
+        return isChunkLoaded(x >> 4, z >> 4);
+    }
+
+    public ChunkSection getChunkAtBlock(int x, int y, int z) {
+        Chunk chunk = getChunkAt(x >> 4, z >> 4);
+        return y < 0 || y > TOTAL_HEIGHT ? null : chunk.getSection(y >> 4);
     }
 }

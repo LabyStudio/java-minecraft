@@ -6,7 +6,7 @@ import de.labystudio.game.util.*;
 import de.labystudio.game.world.World;
 import de.labystudio.game.world.WorldRenderer;
 import de.labystudio.game.world.block.Block;
-import de.labystudio.game.world.chunk.Chunk;
+import de.labystudio.game.world.chunk.ChunkSection;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
@@ -23,7 +23,10 @@ public class Game implements Runnable {
     private final Timer timer = new Timer(20.0F);
     private World world;
     private WorldRenderer worldRenderer;
+
+    // Player
     private Player player;
+    private Block pickedBlock = Block.STONE;
 
     // States
     private boolean paused = false;
@@ -74,7 +77,6 @@ public class Game implements Runnable {
                 frames++;
                 while (System.currentTimeMillis() >= lastTime + 1000L) {
                     //System.out.println(frames + " fps, " + this.world.updates);
-                    this.world.updates = 0;
 
                     lastTime += 1000L;
                     frames = 0;
@@ -113,6 +115,7 @@ public class Game implements Runnable {
     public void tick() {
         this.player.onTick();
         this.world.onTick();
+        this.worldRenderer.onTick();
     }
 
     private void moveCameraToPlayer(float partialTicks) {
@@ -130,7 +133,7 @@ public class Game implements Runnable {
     }
 
     private void setupCamera(float partialTicks) {
-        double zFar = Math.pow(WorldRenderer.RENDER_DISTANCE * Chunk.SIZE, 2);
+        double zFar = Math.pow(WorldRenderer.RENDER_DISTANCE * ChunkSection.SIZE, 2);
 
         GL11.glMatrixMode(GL11.GL_PROJECTION);
         GL11.glLoadIdentity();
@@ -150,19 +153,25 @@ public class Game implements Runnable {
             this.player.turn(mouseMoveX, mouseMoveY);
         }
 
-        HitResult hitResult = getTargetBlock(partialTicks);
+        // Calculate the target block of the player
+        HitResult hitResult = getTargetBlock();
 
         while (Mouse.next()) {
             if ((Mouse.getEventButton() == 0) && (Mouse.getEventButtonState())) {
-                if (paused) {
-                    paused = false;
+                // Resume game if paused
+                if (this.paused) {
+                    this.paused = false;
+
                     Mouse.setGrabbed(true);
                 } else {
+                    // Destroy block
                     if (hitResult != null) {
                         this.world.setBlockAt(hitResult.x, hitResult.y, hitResult.z, 0);
                     }
                 }
             }
+
+            // Place block
             if ((Mouse.getEventButton() == 1) && (Mouse.getEventButtonState())) {
                 if (hitResult != null) {
                     int x = hitResult.x + hitResult.face.x;
@@ -170,10 +179,22 @@ public class Game implements Runnable {
                     int z = hitResult.z + hitResult.face.z;
 
                     AABB placedBoundingBox = new AABB(x, y, z, x + 1, y + 1, z + 1);
+
+                    // Don't place blocks if the player is standing there
                     if (!placedBoundingBox.intersects(this.player.boundingBox)) {
-                        this.world.setBlockAt(x, y, z, Block.STONE.getId());
+                        this.world.setBlockAt(x, y, z, this.pickedBlock.getId());
                     }
 
+                }
+            }
+
+            // Pick block
+            if ((Mouse.getEventButton() == 2) && (Mouse.getEventButtonState())) {
+                if (hitResult != null) {
+                    short typeId = this.world.getBlockAt(hitResult.x, hitResult.y, hitResult.z);
+                    if (typeId != 0) {
+                        this.pickedBlock = Block.getById(typeId);
+                    }
                 }
             }
         }
@@ -188,6 +209,9 @@ public class Game implements Runnable {
         // Camera
         setupCamera(partialTicks);
 
+        int cameraChunkX = (int) this.player.x >> 4;
+        int cameraChunkZ = (int) this.player.z >> 4;
+
         // Fog
         GL11.glEnable(GL11.GL_FOG);
         this.worldRenderer.setupFog(this.player.isHeadInWater());
@@ -199,7 +223,7 @@ public class Game implements Runnable {
         GL11.glEnable(GL11.GL_CULL_FACE);
 
         // Render solid blocks
-        this.worldRenderer.render((int) this.player.x >> 4, (int) this.player.z >> 4, EnumWorldBlockLayer.SOLID);
+        this.worldRenderer.render(cameraChunkX, cameraChunkZ, EnumWorldBlockLayer.SOLID);
 
         // Enable alpha and disable face culling
         GL11.glEnable(GL11.GL_BLEND);
@@ -209,7 +233,7 @@ public class Game implements Runnable {
         GL11.glDisable(GL11.GL_CULL_FACE);
 
         // Render cutout blocks (Leaves, glass, water..)
-        this.worldRenderer.render((int) this.player.x >> 4, (int) this.player.z >> 4, EnumWorldBlockLayer.CUTOUT);
+        this.worldRenderer.render(cameraChunkX, cameraChunkZ, EnumWorldBlockLayer.CUTOUT);
 
         // Render selection
         if (hitResult != null) {
@@ -231,7 +255,7 @@ public class Game implements Runnable {
                 hitResult.x + 1, hitResult.y + 1, hitResult.z + 1);
     }
 
-    private HitResult getTargetBlock(float partialTicks) {
+    private HitResult getTargetBlock() {
         double yaw = Math.toRadians(-this.player.yaw + 90);
         double pitch = Math.toRadians(-this.player.pitch);
 

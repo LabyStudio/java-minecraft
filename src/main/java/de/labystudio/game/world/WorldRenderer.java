@@ -6,21 +6,26 @@ import de.labystudio.game.render.world.BlockRenderer;
 import de.labystudio.game.util.EnumWorldBlockLayer;
 import de.labystudio.game.util.Textures;
 import de.labystudio.game.world.chunk.Chunk;
-import de.labystudio.game.world.chunk.ChunkLayers;
+import de.labystudio.game.world.chunk.ChunkSection;
 import org.lwjgl.opengl.GL11;
 
 import java.nio.FloatBuffer;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class WorldRenderer {
 
-    public static final int RENDER_DISTANCE = 4;
-
-    private final BlockRenderer blockRenderer = new BlockRenderer();
-
-    private final World world;
-    public final int textureId = Textures.loadTexture("/terrain.png", GL11.GL_NEAREST);
+    public static final int RENDER_DISTANCE = 8;
 
     private final FloatBuffer colorBuffer = GLAllocation.createDirectFloatBuffer(16);
+    public final int textureId = Textures.loadTexture("/terrain.png", GL11.GL_NEAREST);
+
+    private final World world;
+
+    private final BlockRenderer blockRenderer = new BlockRenderer();
+    private final Frustum frustum = new Frustum();
+    private final List<ChunkSection> chunkSectionUpdateQueue = new ArrayList<>();
 
     public WorldRenderer(World world) {
         this.world = world;
@@ -47,7 +52,7 @@ public class WorldRenderer {
             GL11.glFogf(GL11.GL_FOG_DENSITY, 0.1F); // Fog distance
             GL11.glFog(GL11.GL_FOG_COLOR, putColor(0.2F, 0.2F, 0.4F, 1.0F));
         } else {
-            int viewDistance = WorldRenderer.RENDER_DISTANCE * Chunk.SIZE;
+            int viewDistance = WorldRenderer.RENDER_DISTANCE * ChunkSection.SIZE;
 
             GL11.glFogi(GL11.GL_FOG_MODE, GL11.GL_LINEAR);
             GL11.glFogf(GL11.GL_FOG_START, viewDistance / 4.0F); // Fog start
@@ -56,17 +61,45 @@ public class WorldRenderer {
         }
     }
 
+    public void onTick() {
+
+    }
+
     public void render(int cameraChunkX, int cameraChunkZ, EnumWorldBlockLayer renderLayer) {
-        Frustum frustum = Frustum.getFrustum();
+        this.frustum.update();
 
-        for (ChunkLayers chunkLayers : this.world.chunks.values()) {
-            int distanceX = Math.abs(cameraChunkX - chunkLayers.getX());
-            int distanceZ = Math.abs(cameraChunkZ - chunkLayers.getZ());
+        for (Chunk chunk : this.world.chunks.values()) {
+            int distanceX = Math.abs(cameraChunkX - chunk.getX());
+            int distanceZ = Math.abs(cameraChunkZ - chunk.getZ());
 
-            if (distanceX < RENDER_DISTANCE && distanceZ < RENDER_DISTANCE && frustum.cubeInFrustum(chunkLayers)) {
-                for (Chunk chunk : chunkLayers.getLayers()) {
-                    chunk.render(this, renderLayer);
+            // Is in camera view
+            if (distanceX < RENDER_DISTANCE && distanceZ < RENDER_DISTANCE && this.frustum.cubeInFrustum(chunk)) {
+
+                // For all chunk sections
+                for (ChunkSection chunkSection : chunk.getSections()) {
+                    // Render chunk section
+                    chunkSection.render(renderLayer);
+
+                    // Queue for rebuild
+                    if (chunkSection.isQueuedForRebuild() && !this.chunkSectionUpdateQueue.contains(chunkSection)) {
+                        this.chunkSectionUpdateQueue.add(chunkSection);
+                    }
                 }
+            }
+        }
+
+        // Sort update queue, chunk sections that are closer to the camera get a higher priority
+        Collections.sort(this.chunkSectionUpdateQueue, (section1, section2) -> {
+            int distance1 = (int) (Math.pow(section1.x - cameraChunkX, 2) + Math.pow(section1.z - cameraChunkZ, 2));
+            int distance2 = (int) (Math.pow(section2.x - cameraChunkX, 2) + Math.pow(section2.z - cameraChunkZ, 2));
+            return Integer.compare(distance1, distance2);
+        });
+
+        // Rebuild one chunk per frame
+        if (!this.chunkSectionUpdateQueue.isEmpty()) {
+            ChunkSection chunkSection = this.chunkSectionUpdateQueue.remove(0);
+            if (chunkSection != null) {
+                chunkSection.rebuild(this);
             }
         }
     }
