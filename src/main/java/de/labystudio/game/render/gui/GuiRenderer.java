@@ -5,7 +5,7 @@ import de.labystudio.game.render.Tessellator;
 import de.labystudio.game.util.Textures;
 import org.lwjgl.opengl.GL11;
 
-public class Gui {
+public class GuiRenderer {
 
     private int textureId;
     private int zLevel = 0;
@@ -50,15 +50,23 @@ public class Gui {
     }
 
     public void drawTexturedModalRect(int left, int top, int offsetX, int offsetY, int width, int height) {
-        float f = 0.00390625F;
-        float f1 = 0.00390625F;
         Tessellator tessellator = Tessellator.instance;
         tessellator.startDrawingQuads();
-        tessellator.addVertexWithUV(left, top + height, zLevel, (float) (offsetX) * f, (float) (offsetY + height) * f1);
-        tessellator.addVertexWithUV(left + width, top + height, zLevel, (float) (offsetX + width) * f, (float) (offsetY + height) * f1);
-        tessellator.addVertexWithUV(left + width, top, zLevel, (float) (offsetX + width) * f, (float) (offsetY) * f1);
-        tessellator.addVertexWithUV(left, top, zLevel, (float) (offsetX) * f, (float) (offsetY) * f1);
+        drawTexturedModalRect(tessellator, left, top, offsetX, offsetY, width, height, width, height, 256, 256);
         tessellator.draw();
     }
 
+    public void drawTexturedModalRect(Tessellator tessellator, int x, int y,
+                                      int u, int v, int uWidth, int vHeight,
+                                      int width, int height,
+                                      float bitMapWidth, float bitmapHeight) {
+
+        float factorX = 1.0F / bitMapWidth;
+        float factorY = 1.0F / bitmapHeight;
+
+        tessellator.addVertexWithUV(x, y + height, zLevel, u * factorX, (v + vHeight) * factorY);
+        tessellator.addVertexWithUV(x + width, y + height, zLevel, (u + uWidth) * factorX, (v + vHeight) * factorY);
+        tessellator.addVertexWithUV(x + width, y, zLevel, (u + uWidth) * factorX, v * factorY);
+        tessellator.addVertexWithUV(x, y, zLevel, u * factorX, v * factorY);
+    }
 }

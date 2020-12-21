@@ -18,5 +18,4 @@ dependencies {
 
     // NBT
     implementation 'com.github.Steveice10:opennbt:1.3'
-
 }

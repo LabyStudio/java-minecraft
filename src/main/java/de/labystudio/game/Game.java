@@ -1,7 +1,8 @@
 package de.labystudio.game;
 
 import de.labystudio.game.player.Player;
-import de.labystudio.game.render.gui.Gui;
+import de.labystudio.game.render.gui.FontRenderer;
+import de.labystudio.game.render.gui.GuiRenderer;
 import de.labystudio.game.util.*;
 import de.labystudio.game.world.World;
 import de.labystudio.game.world.WorldRenderer;
@@ -14,15 +15,19 @@ import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.util.glu.GLU;
 
+import java.io.File;
+import java.io.IOException;
+
 public class Game implements Runnable {
 
     private final GameWindow gameWindow = new GameWindow(this);
-    protected final Gui gui = new Gui();
+    protected final GuiRenderer gui = new GuiRenderer();
 
     // Game
     private final Timer timer = new Timer(20.0F);
     private World world;
     private WorldRenderer worldRenderer;
+    private FontRenderer fontRenderer;
 
     // Player
     private Player player;
@@ -31,8 +36,9 @@ public class Game implements Runnable {
     // States
     private boolean paused = false;
     private boolean running = true;
+    private int fps;
 
-    public void init() throws LWJGLException {
+    public void init() throws LWJGLException, IOException {
         // Setup display
         this.gameWindow.init();
         this.gui.init(this.gameWindow);
@@ -42,6 +48,7 @@ public class Game implements Runnable {
         this.world = new World();
         this.worldRenderer = new WorldRenderer(this.world);
         this.player = new Player(this.world);
+        this.fontRenderer = new FontRenderer(this.gui, "/font.png");
 
         // Setup controls
         Keyboard.create();
@@ -67,7 +74,7 @@ public class Game implements Runnable {
                 }
 
                 // Limit framerate
-                Thread.sleep(5L);
+                //Thread.sleep(5L);
 
                 GL11.glViewport(0, 0, this.gameWindow.displayWidth, this.gameWindow.displayHeight);
                 render(this.timer.partialTicks);
@@ -76,7 +83,7 @@ public class Game implements Runnable {
 
                 frames++;
                 while (System.currentTimeMillis() >= lastTime + 1000L) {
-                    //System.out.println(frames + " fps, " + this.world.updates);
+                    this.fps = frames;
 
                     lastTime += 1000L;
                     frames = 0;
@@ -246,6 +253,12 @@ public class Game implements Runnable {
 
         this.gui.setupCamera();
         this.gui.renderCrosshair();
+
+        // Enable alpha
+        GL11.glEnable(GL11.GL_BLEND);
+        GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+
+        this.fontRenderer.drawString("FPS: " + this.fps, 2, 2);
     }
 
     public void renderSelection(HitResult hitResult) {
@@ -313,6 +326,11 @@ public class Game implements Runnable {
     }
 
     public static void main(String[] args) throws LWJGLException {
+        // Set library path if not available
+        if (System.getProperty("org.lwjgl.librarypath") == null) {
+            System.setProperty("org.lwjgl.librarypath", new File("natives").getAbsolutePath());
+        }
+
         new Thread(new Game(), "Game Thread").start();
     }
 }

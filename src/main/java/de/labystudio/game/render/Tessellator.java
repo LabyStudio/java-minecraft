@@ -15,24 +15,30 @@ public class Tessellator {
     private static final boolean convertQuadsToTriangles = true;
     private static final boolean tryVBO = false;
 
-    private ByteBuffer byteBuffer;
+    private final ByteBuffer byteBuffer;
     private final IntBuffer intBuffer;
     private final FloatBuffer floatBuffer;
+
     private final int[] rawBuffer;
     private int vertexCount;
+
     private double textureU;
     private double textureV;
+
     private int color;
     private boolean hasColor;
     private boolean hasTexture;
     private boolean hasNormals;
+
     private int rawBufferIndex;
     private int addedVertices;
     private boolean isColorDisabled;
     private int drawMode;
+
     private double xOffset;
     private double yOffset;
     private double zOffset;
+
     private int normal;
     private boolean isDrawing;
     private final boolean useVBO = tryVBO && GLContext.getCapabilities().GL_ARB_vertex_buffer_object;
@@ -62,9 +68,11 @@ public class Tessellator {
         this.isDrawing = false;
         if (vertexCount > 0) {
             intBuffer.clear();
+
             intBuffer.put(rawBuffer, 0, rawBufferIndex);
             byteBuffer.position(0);
             byteBuffer.limit(rawBufferIndex * 4);
+
             if (useVBO) {
                 vboIndex = (vboIndex + 1) % vboCount;
                 ARBVertexBufferObject.glBindBufferARB(ARBVertexBufferObject.GL_ARRAY_BUFFER_ARB, vertexBuffers.get(vboIndex));
@@ -120,14 +128,15 @@ public class Tessellator {
                 GL11.glDisableClientState(GL11.GL_NORMAL_ARRAY);
             }
         }
+
         reset();
     }
 
     private void reset() {
-        vertexCount = 0;
-        byteBuffer.clear();
-        rawBufferIndex = 0;
-        addedVertices = 0;
+        this.vertexCount = 0;
+        this.byteBuffer.clear();
+        this.rawBufferIndex = 0;
+        this.addedVertices = 0;
     }
 
     public void startDrawingQuads() {
@@ -135,158 +144,154 @@ public class Tessellator {
     }
 
     public void startDrawing(int i) {
-        if (isDrawing) {
-            throw new IllegalStateException("Already tesselating!");
+        if (this.isDrawing) {
+            throw new IllegalStateException("Already tessellating!");
         } else {
-            isDrawing = true;
+            this.isDrawing = true;
+
             reset();
-            drawMode = i;
-            hasNormals = false;
-            hasColor = false;
-            hasTexture = false;
-            isColorDisabled = false;
+
+            this.drawMode = i;
+            this.hasNormals = false;
+            this.hasColor = false;
+            this.hasTexture = false;
+            this.isColorDisabled = false;
         }
     }
 
-    public void setTextureUV(double d, double d1) {
-        hasTexture = true;
-        textureU = d;
-        textureV = d1;
+    public void setTextureUV(double u, double v) {
+        this.hasTexture = true;
+        this.textureU = u;
+        this.textureV = v;
     }
 
-    public void setColorOpaque_F(float f, float f1, float f2) {
-        setColorOpaque((int) (f * 255F), (int) (f1 * 255F), (int) (f2 * 255F));
+    public void setColorOpaque_F(float r, float g, float b) {
+        setColorOpaque((int) (r * 255F), (int) (g * 255F), (int) (b * 255F));
     }
 
-    public void setColorRGBA_F(float f, float f1, float f2, float f3) {
-        setColorRGBA((int) (f * 255F), (int) (f1 * 255F), (int) (f2 * 255F), (int) (f3 * 255F));
+    public void setColorRGBA_F(float r, float g, float b, float a) {
+        setColorRGBA((int) (r * 255F), (int) (g * 255F), (int) (b * 255F), (int) (a * 255F));
     }
 
-    public void setColorRGB_F(float f, float f1, float f2) {
-        setColorRGBA((int) (f * 255F), (int) (f1 * 255F), (int) (f2 * 255F), 255);
+    public void setColorRGB_F(float r, float g, float b) {
+        setColorRGBA((int) (r * 255F), (int) (g * 255F), (int) (b * 255F), 255);
     }
 
-    public void setColorOpaque(int i, int j, int k) {
-        setColorRGBA(i, j, k, 255);
+    public void setColorOpaque(int r, int g, int b) {
+        setColorRGBA(r, g, b, 255);
     }
 
-    public void setColorRGBA(int i, int j, int k, int l) {
-        if (isColorDisabled) {
+    public void setColorRGBA(int r, int g, int b, int a) {
+        if (this.isColorDisabled) {
             return;
         }
-        if (i > 255) {
-            i = 255;
-        }
-        if (j > 255) {
-            j = 255;
-        }
-        if (k > 255) {
-            k = 255;
-        }
-        if (l > 255) {
-            l = 255;
-        }
-        if (i < 0) {
-            i = 0;
-        }
-        if (j < 0) {
-            j = 0;
-        }
-        if (k < 0) {
-            k = 0;
-        }
-        if (l < 0) {
-            l = 0;
-        }
-        hasColor = true;
-        color = l << 24 | k << 16 | j << 8 | i;
+
+        this.hasColor = true;
+        this.color = ensureColorRange(a) << 24
+                | ensureColorRange(b) << 16
+                | ensureColorRange(g) << 8
+                | ensureColorRange(r);
     }
 
-    public void addVertexWithUV(double d, double d1, double d2, double d3, double d4) {
-        setTextureUV(d3, d4);
-        addVertex(d, d1, d2);
+    public void addVertexWithUV(double x, double y, double z, double u, double v) {
+        setTextureUV(u, v);
+        addVertex(x, y, z);
     }
 
-    public void addVertex(double d, double d1, double d2) {
-        addedVertices++;
-        if (drawMode == 7 && convertQuadsToTriangles && addedVertices % 4 == 0) {
+    public void addVertex(double x, double y, double z) {
+        this.addedVertices++;
+
+        if (this.drawMode == 7 && convertQuadsToTriangles && this.addedVertices % 4 == 0) {
             for (int i = 0; i < 2; i++) {
                 int j = 8 * (3 - i);
-                if (hasTexture) {
+
+                if (this.hasTexture) {
                     rawBuffer[rawBufferIndex + 3] = rawBuffer[(rawBufferIndex - j) + 3];
                     rawBuffer[rawBufferIndex + 4] = rawBuffer[(rawBufferIndex - j) + 4];
                 }
-                if (hasColor) {
+
+                if (this.hasColor) {
                     rawBuffer[rawBufferIndex + 5] = rawBuffer[(rawBufferIndex - j) + 5];
                 }
+
                 rawBuffer[rawBufferIndex] = rawBuffer[(rawBufferIndex - j)];
                 rawBuffer[rawBufferIndex + 1] = rawBuffer[(rawBufferIndex - j) + 1];
                 rawBuffer[rawBufferIndex + 2] = rawBuffer[(rawBufferIndex - j) + 2];
+
                 vertexCount++;
                 rawBufferIndex += 8;
             }
-
         }
-        if (hasTexture) {
+
+        if (this.hasTexture) {
             rawBuffer[rawBufferIndex + 3] = Float.floatToRawIntBits((float) textureU);
             rawBuffer[rawBufferIndex + 4] = Float.floatToRawIntBits((float) textureV);
         }
-        if (hasColor) {
+
+        if (this.hasColor) {
             rawBuffer[rawBufferIndex + 5] = color;
         }
-        if (hasNormals) {
+
+        if (this.hasNormals) {
             rawBuffer[rawBufferIndex + 6] = normal;
         }
-        rawBuffer[rawBufferIndex] = Float.floatToRawIntBits((float) (d + xOffset));
-        rawBuffer[rawBufferIndex + 1] = Float.floatToRawIntBits((float) (d1 + yOffset));
-        rawBuffer[rawBufferIndex + 2] = Float.floatToRawIntBits((float) (d2 + zOffset));
+
+        rawBuffer[rawBufferIndex] = Float.floatToRawIntBits((float) (x + xOffset));
+        rawBuffer[rawBufferIndex + 1] = Float.floatToRawIntBits((float) (y + yOffset));
+        rawBuffer[rawBufferIndex + 2] = Float.floatToRawIntBits((float) (z + zOffset));
+
         rawBufferIndex += 8;
         vertexCount++;
-        if (vertexCount % 4 == 0 && rawBufferIndex >= bufferSize - 32) {
+
+        if (this.vertexCount % 4 == 0 && rawBufferIndex >= bufferSize - 32) {
             draw();
             isDrawing = true;
         }
     }
 
-    public void setColorOpaque_I(int i) {
-        int j = i >> 16 & 0xff;
-        int k = i >> 8 & 0xff;
-        int l = i & 0xff;
-        setColorOpaque(j, k, l);
+    public void setColorOpaque_I(int rgb) {
+        int r = rgb >> 16 & 0xff;
+        int g = rgb >> 8 & 0xff;
+        int b = rgb & 0xff;
+
+        setColorOpaque(r, g, b);
     }
 
-    public void setColorRGBA_I(int i, int j) {
-        int k = i >> 16 & 0xff;
-        int l = i >> 8 & 0xff;
-        int i1 = i & 0xff;
-        setColorRGBA(k, l, i1, j);
+    public void setColorRGBA_I(int rgb, int alpha) {
+        int k = rgb >> 16 & 0xff;
+        int l = rgb >> 8 & 0xff;
+        int i1 = rgb & 0xff;
+
+        setColorRGBA(k, l, i1, alpha);
     }
 
     public void disableColor() {
         isColorDisabled = true;
     }
 
-    public void setNormal(float f, float f1, float f2) {
-        if (!isDrawing) {
-            System.out.println("But..");
-        }
-        hasNormals = true;
-        byte byte0 = (byte) (int) (f * 128F);
-        byte byte1 = (byte) (int) (f1 * 127F);
-        byte byte2 = (byte) (int) (f2 * 127F);
-        normal = byte0 | byte1 << 8 | byte2 << 16;
+    public void setNormal(float x, float y, float z) {
+        this.hasNormals = true;
+
+        byte xByte = (byte) (int) (x * 128F);
+        byte yByte = (byte) (int) (y * 127F);
+        byte zByte = (byte) (int) (z * 127F);
+
+        normal = xByte | yByte << 8 | zByte << 16;
     }
 
-    public void setTranslationD(double d, double d1, double d2) {
-        xOffset = d;
-        yOffset = d1;
-        zOffset = d2;
+    public void setTranslationD(double xOffset, double yOffset, double zOffset) {
+        this.xOffset = xOffset;
+        this.yOffset = yOffset;
+        this.zOffset = zOffset;
     }
 
-    public void setTranslationF(float f, float f1, float f2) {
-        xOffset += f;
-        yOffset += f1;
-        zOffset += f2;
+    public void setTranslationF(float xOffset, float yOffset, float zOffset) {
+        this.xOffset += xOffset;
+        this.yOffset += yOffset;
+        this.zOffset += zOffset;
     }
 
+    private int ensureColorRange(int value) {
+        return Math.min(Math.max(value, 0), 255);
+    }
 }
