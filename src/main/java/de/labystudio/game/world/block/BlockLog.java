@@ -9,7 +9,7 @@ public class BlockLog extends Block {
     }
 
     @Override
-    protected int getTextureForFace(EnumBlockFace face) {
+    public int getTextureForFace(EnumBlockFace face) {
         return this.textureSlotId + (face.isYAxis() ? 1 : 0);
     }
 }

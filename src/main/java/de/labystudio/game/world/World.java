@@ -1,5 +1,6 @@
 package de.labystudio.game.world;
 
+import de.labystudio.game.render.world.IWorldAccess;
 import de.labystudio.game.util.AABB;
 import de.labystudio.game.util.EnumBlockFace;
 import de.labystudio.game.world.block.Block;
@@ -12,7 +13,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
-public class World {
+public class World implements IWorldAccess {
 
     public static final int TOTAL_HEIGHT = Chunk.SIZE * 16 - 1;
     public Map<Long, ChunkLayers> chunks = new HashMap<>();
@@ -72,8 +73,8 @@ public class World {
         // Light updates
         if (!this.lightUpdateQueue.isEmpty()) {
 
-            // Handle 512 light updates per tick
-            for (int i = 0; i < 512; i++) {
+            // Handle 128 light updates per tick
+            for (int i = 0; i < 128; i++) {
 
                 // Get next position to update
                 Long positionIndex = this.lightUpdateQueue.poll();
@@ -96,7 +97,8 @@ public class World {
         return typeId == 0 || Block.getById(typeId).isTransparent();
     }
 
-    public byte getBlockAt(int x, int y, int z) {
+    @Override
+    public short getBlockAt(int x, int y, int z) {
         Chunk chunk = getChunkAtBlock(x, y, z);
         return chunk == null ? 0 : chunk.getBlockAt(x & 15, y & 15, z & 15);
     }
@@ -272,6 +274,7 @@ public class World {
         }
     }
 
+    @Override
     public int getLightAt(int x, int y, int z) {
         Chunk chunk = getChunkAtBlock(x, y, z);
         return chunk == null ? 15 : chunk.getLightAt(x & 15, y & 15, z & 15);

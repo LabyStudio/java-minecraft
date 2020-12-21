@@ -15,6 +15,10 @@ public final class WorldGenerator {
 
     private final NoiseGenerator groundHeightNoise;
     private final NoiseGenerator hillNoise;
+    private final NoiseGenerator sandInWaterNoise;
+    private final NoiseGenerator forestNoise;
+
+    private final int waterLevel = 64;
 
     public WorldGenerator(World world, int seed) {
         this.world = world;
@@ -24,7 +28,13 @@ public final class WorldGenerator {
         this.groundHeightNoise = new NoiseGeneratorOctaves(this.random, 8);
         this.hillNoise = new NoiseGeneratorCombined(new NoiseGeneratorOctaves(this.random, 4),
                 new NoiseGeneratorCombined(new NoiseGeneratorOctaves(this.random, 4),
-                        new NoiseGeneratorOctaves(this.random, 8)));
+                        new NoiseGeneratorOctaves(this.random, 4)));
+
+        // Water noise
+        this.sandInWaterNoise = new NoiseGeneratorOctaves(this.random, 8);
+
+        // Population
+        this.forestNoise = new NoiseGeneratorOctaves(this.random, 8);
     }
 
     public void generateChunk(int chunkX, int chunkZ) {
@@ -41,13 +51,28 @@ public final class WorldGenerator {
                 double hillValue = Math.max(0, this.hillNoise.perlin(absoluteX / 18d, absoluteZ / 18d) * 6);
 
                 // Calculate final height for this position
-                int groundHeightY = (int) (heightValue / 10 + 60 + hillValue);
+                int groundHeightY = (int) (heightValue / 10 + this.waterLevel + hillValue);
 
-                // Generate height, the highest block is grass
-                for (int y = 0; y <= groundHeightY; y++) {
-                    int blockId = y == groundHeightY ? Block.GRASS.getId() : groundHeightY - y < 3 ? Block.DIRT.getId() : Block.STONE.getId();
+                if (groundHeightY < this.waterLevel) {
+                    // Generate water
+                    for (int y = 0; y <= this.waterLevel; y++) {
+                        // Use noise to place sand in water
+                        boolean sandInWater = this.sandInWaterNoise.perlin(absoluteX, absoluteZ) < 0;
+                        Block block = y > groundHeightY ? Block.WATER : groundHeightY - y < 3 && sandInWater ? Block.SAND : Block.STONE;
 
-                    this.world.setBlockAt(absoluteX, y, absoluteZ, blockId);
+                        // Send water, sand and stone
+                        this.world.setBlockAt(absoluteX, y, absoluteZ, block.getId());
+                    }
+                } else {
+                    // Generate height, the highest block is grass
+                    for (int y = 0; y <= groundHeightY; y++) {
+                        // Use the height map to determine the start of the water by shifting it
+                        boolean isBeach = heightValue < 5 && y < this.waterLevel + 2;
+                        Block block = y == groundHeightY ? isBeach ? Block.SAND : Block.GRASS : groundHeightY - y < 3 ? Block.DIRT : Block.STONE;
+
+                        // Set sand, grass, dirt and stone
+                        this.world.setBlockAt(absoluteX, y, absoluteZ, block.getId());
+                    }
                 }
             }
         }
@@ -55,19 +80,23 @@ public final class WorldGenerator {
 
     public void populateChunk(int chunkX, int chunkZ) {
         for (int index = 0; index < 10; index++) {
-            if (this.random.nextInt(20) == 0) {
-                int x = this.random.nextInt(Chunk.SIZE);
-                int z = this.random.nextInt(Chunk.SIZE);
+            int x = this.random.nextInt(Chunk.SIZE);
+            int z = this.random.nextInt(Chunk.SIZE);
 
-                // Absolute position of the block
-                int absoluteX = chunkX * Chunk.SIZE + x;
-                int absoluteZ = chunkZ * Chunk.SIZE + z;
+            // Absolute position of the block
+            int absoluteX = chunkX * Chunk.SIZE + x;
+            int absoluteZ = chunkZ * Chunk.SIZE + z;
+
+            // Use noise for a forest pattern
+            double perlin = this.forestNoise.perlin(absoluteX * 10, absoluteZ * 10);
+            if (perlin > 0 && this.random.nextInt(2) == 0) {
 
                 // Get highest block at this position
                 int highestY = this.world.getHighestBlockYAt(absoluteX, absoluteZ);
 
                 // Don't place a tree if there is no grass
-                if (this.world.getBlockAt(absoluteX, highestY, absoluteZ) == Block.GRASS.getId()) {
+                if (this.world.getBlockAt(absoluteX, highestY, absoluteZ) == Block.GRASS.getId()
+                        && this.world.getBlockAt(absoluteX, highestY + 1, absoluteZ) == 0) {
                     int treeHeight = this.random.nextInt(2) + 5;
 
                     // Create tree log

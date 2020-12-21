@@ -1,11 +1,11 @@
 package de.labystudio.game.player;
 
-import de.labystudio.game.world.World;
 import de.labystudio.game.util.AABB;
+import de.labystudio.game.world.World;
+import de.labystudio.game.world.block.Block;
+import org.lwjgl.input.Keyboard;
 
 import java.util.List;
-
-import org.lwjgl.input.Keyboard;
 
 public class Player {
 
@@ -38,6 +38,7 @@ public class Player {
     float moveForward;
     float moveStrafing;
 
+    private int jumpTicks;
     private int flyToggleTimer;
     private int sprintToggleTimer;
 
@@ -109,6 +110,10 @@ public class Player {
             }
         }
 
+        if (this.jumpTicks > 0) {
+            --this.jumpTicks;
+        }
+
         if (this.flyToggleTimer > 0) {
             --this.flyToggleTimer;
         }
@@ -133,45 +138,30 @@ public class Player {
         }
 
         // Jump
-        if (this.onGround && this.jumping) {
-            this.motionY = 0.42F;
-
-            if (this.sprinting) {
-                float radiansYaw = (float) Math.toRadians(this.yaw);
-                this.motionX -= Math.sin(radiansYaw) * 0.2F;
-                this.motionZ += Math.cos(radiansYaw) * 0.2F;
+        if (this.jumping) {
+            if (isInWater()) {
+                this.motionY += 0.03999999910593033D;
+            } else if (this.onGround && this.jumpTicks == 0) {
+                this.jump();
+                this.jumpTicks = 10;
             }
+        } else {
+            this.jumpTicks = 0;
         }
 
         this.moveStrafing *= 0.98F;
         this.moveForward *= 0.98F;
 
         if (this.flying) {
-            // Fly move up and down
-            if (this.sneaking) {
-                this.moveStrafing = (float) ((double) this.moveStrafing / 0.3D);
-                this.moveForward = (float) ((double) this.moveForward / 0.3D);
-                this.motionY -= this.flySpeed * 3.0F;
-            }
-
-            if (this.jumping) {
-                this.motionY += this.flySpeed * 3.0F;
-            }
-
-            double prevMotionY = this.motionY;
-            float prevJumpMovementFactor = this.jumpMovementFactor;
-            this.jumpMovementFactor = this.flySpeed * (float) (this.sprinting ? 2 : 1);
-
-            travel(this.moveForward, 0, this.moveStrafing);
-
-            this.motionY = prevMotionY * 0.6D;
-            this.jumpMovementFactor = prevJumpMovementFactor;
-
-            if (this.onGround) {
-                this.flying = false;
-            }
+            travelFlying(this.moveForward, 0, this.moveStrafing);
         } else {
-            travel(this.moveForward, 0, this.moveStrafing);
+            if (isInWater()) {
+                // Is inside of water
+                travelInWater(this.moveForward, 0, this.moveStrafing);
+            } else {
+                // Is on land
+                travel(this.moveForward, 0, this.moveStrafing);
+            }
         }
 
         this.jumpMovementFactor = this.speedInAir;
@@ -187,7 +177,64 @@ public class Player {
         }
     }
 
-    public void travel(float strafe, float vertical, float forward) {
+    public boolean isInWater() {
+        return this.world.getBlockAt(getBlockPosX(), getBlockPosY(), getBlockPosZ()) == Block.WATER.getId();
+    }
+
+    public boolean isHeadInWater() {
+        return this.world.getBlockAt(getBlockPosX(), (int) (this.y + getEyeHeight() + 0.12), getBlockPosZ()) == Block.WATER.getId();
+    }
+
+    protected void jump() {
+        this.motionY = 0.42D;
+
+        if (this.sprinting) {
+            float radiansYaw = (float) Math.toRadians(this.yaw);
+            this.motionX -= Math.sin(radiansYaw) * 0.2F;
+            this.motionZ += Math.cos(radiansYaw) * 0.2F;
+        }
+    }
+
+    private void travelFlying(float forward, float vertical, float strafe) {
+        // Fly move up and down
+        if (this.sneaking) {
+            this.moveStrafing = strafe / 0.3F;
+            this.moveForward = forward / 0.3F;
+            this.motionY -= this.flySpeed * 3.0F;
+        }
+
+        if (this.jumping) {
+            this.motionY += this.flySpeed * 3.0F;
+        }
+
+        double prevMotionY = this.motionY;
+        float prevJumpMovementFactor = this.jumpMovementFactor;
+        this.jumpMovementFactor = this.flySpeed * (this.sprinting ? 2 : 1);
+
+        travel(forward, vertical, strafe);
+
+        this.motionY = prevMotionY * 0.6D;
+        this.jumpMovementFactor = prevJumpMovementFactor;
+
+        if (this.onGround) {
+            this.flying = false;
+        }
+    }
+
+    private void travelInWater(float forward, float vertical, float strafe) {
+        float slipperiness = 0.8F;
+        float friction = 0.02F;
+
+        this.moveRelative(forward, vertical, strafe, friction);
+        this.collision = moveCollide(-this.motionX, this.motionY, -this.motionZ);
+
+        this.motionX *= slipperiness;
+        this.motionY *= 0.800000011920929D;
+        this.motionZ *= slipperiness;
+        this.motionY -= 0.02D;
+    }
+
+    public void travel(float forward, float vertical, float strafe) {
         float prevSlipperiness = getBlockSlipperiness() * 0.91F;
 
         float value = 0.16277136F / (prevSlipperiness * prevSlipperiness * prevSlipperiness);
@@ -199,7 +246,7 @@ public class Player {
             friction = this.jumpMovementFactor;
         }
 
-        this.moveRelative(strafe, vertical, forward, friction);
+        this.moveRelative(forward, vertical, strafe, friction);
 
         // Get new speed
         float slipperiness = getBlockSlipperiness() * 0.91F;
@@ -307,7 +354,7 @@ public class Player {
         double originalTargetZ = targetZ;
 
         if (this.onGround && this.sneaking) {
-            for (double d5 = 0.05D; targetX != 0.0D && this.world.getCollisionBoxes(this.boundingBox.offset(targetX, (double) (-this.stepHeight), 0.0D)).isEmpty(); originalTargetX = targetX) {
+            for (; targetX != 0.0D && this.world.getCollisionBoxes(this.boundingBox.offset(targetX, -this.stepHeight, 0.0D)).isEmpty(); originalTargetX = targetX) {
                 if (targetX < 0.05D && targetX >= -0.05D) {
                     targetX = 0.0D;
                 } else if (targetX > 0.0D) {
@@ -317,7 +364,7 @@ public class Player {
                 }
             }
 
-            for (; targetZ != 0.0D && this.world.getCollisionBoxes(this.boundingBox.offset(0.0D, (double) (-this.stepHeight), targetZ)).isEmpty(); originalTargetZ = targetZ) {
+            for (; targetZ != 0.0D && this.world.getCollisionBoxes(this.boundingBox.offset(0.0D, -this.stepHeight, targetZ)).isEmpty(); originalTargetZ = targetZ) {
                 if (targetZ < 0.05D && targetZ >= -0.05D) {
                     targetZ = 0.0D;
                 } else if (targetZ > 0.0D) {
@@ -327,7 +374,7 @@ public class Player {
                 }
             }
 
-            for (; targetX != 0.0D && targetZ != 0.0D && this.world.getCollisionBoxes(this.boundingBox.offset(targetX, (double) (-this.stepHeight), targetZ)).isEmpty(); originalTargetZ = targetZ) {
+            for (; targetX != 0.0D && targetZ != 0.0D && this.world.getCollisionBoxes(this.boundingBox.offset(targetX, -this.stepHeight, targetZ)).isEmpty(); originalTargetZ = targetZ) {
                 if (targetX < 0.05D && targetX >= -0.05D) {
                     targetX = 0.0D;
                 } else if (targetX > 0.0D) {
@@ -419,5 +466,17 @@ public class Player {
         long duration = 100;
         float progress = distance / (float) duration * timePassed;
         return timePassed > duration ? this.fovModifier : this.prevFovModifier - progress;
+    }
+
+    public int getBlockPosX() {
+        return (int) this.x - (this.x < 0 ? 1 : 0);
+    }
+
+    public int getBlockPosY() {
+        return (int) this.y - (this.y < 0 ? 1 : 0);
+    }
+
+    public int getBlockPosZ() {
+        return (int) this.z - (this.z < 0 ? 1 : 0);
     }
 }

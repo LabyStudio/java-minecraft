@@ -2,6 +2,7 @@ package de.labystudio.game.world;
 
 import de.labystudio.game.render.Frustum;
 import de.labystudio.game.render.GLAllocation;
+import de.labystudio.game.render.world.BlockRenderer;
 import de.labystudio.game.util.EnumWorldBlockLayer;
 import de.labystudio.game.util.Textures;
 import de.labystudio.game.world.chunk.Chunk;
@@ -13,6 +14,8 @@ import java.nio.FloatBuffer;
 public class WorldRenderer {
 
     public static final int RENDER_DISTANCE = 4;
+
+    private final BlockRenderer blockRenderer = new BlockRenderer();
 
     private final World world;
     public final int textureId = Textures.loadTexture("/terrain.png", GL11.GL_NEAREST);
@@ -38,18 +41,27 @@ public class WorldRenderer {
         GL11.glMatrixMode(GL11.GL_MODELVIEW);
     }
 
-    public void setupFog() {
-        GL11.glFogi(GL11.GL_FOG_MODE, GL11.GL_VIEWPORT_BIT);
-        GL11.glFogf(GL11.GL_FOG_DENSITY, 0.005F); // Fog distance
-        GL11.glFog(GL11.GL_FOG_COLOR, putColor(0.6222222F - 0.05F, 0.5F + 0.1F, 1.0F, 1.0F));
+    public void setupFog(boolean inWater) {
+        if (inWater) {
+            GL11.glFogi(GL11.GL_FOG_MODE, GL11.GL_EXP);
+            GL11.glFogf(GL11.GL_FOG_DENSITY, 0.1F); // Fog distance
+            GL11.glFog(GL11.GL_FOG_COLOR, putColor(0.2F, 0.2F, 0.4F, 1.0F));
+        } else {
+            int viewDistance = WorldRenderer.RENDER_DISTANCE * Chunk.SIZE;
+
+            GL11.glFogi(GL11.GL_FOG_MODE, GL11.GL_LINEAR);
+            GL11.glFogf(GL11.GL_FOG_START, viewDistance / 4.0F); // Fog start
+            GL11.glFogf(GL11.GL_FOG_END, viewDistance); // Fog end
+            GL11.glFog(GL11.GL_FOG_COLOR, putColor(0.6222222F - 0.05F, 0.5F + 0.1F, 1.0F, 1.0F));
+        }
     }
 
-    public void render(int x, int z, EnumWorldBlockLayer renderLayer) {
+    public void render(int cameraChunkX, int cameraChunkZ, EnumWorldBlockLayer renderLayer) {
         Frustum frustum = Frustum.getFrustum();
 
         for (ChunkLayers chunkLayers : this.world.chunks.values()) {
-            int distanceX = Math.abs(x - chunkLayers.getX());
-            int distanceZ = Math.abs(z - chunkLayers.getZ());
+            int distanceX = Math.abs(cameraChunkX - chunkLayers.getX());
+            int distanceZ = Math.abs(cameraChunkZ - chunkLayers.getZ());
 
             if (distanceX < RENDER_DISTANCE && distanceZ < RENDER_DISTANCE && frustum.cubeInFrustum(chunkLayers)) {
                 for (Chunk chunk : chunkLayers.getLayers()) {
@@ -64,5 +76,9 @@ public class WorldRenderer {
         this.colorBuffer.put(r).put(g).put(b).put(a);
         this.colorBuffer.flip();
         return this.colorBuffer;
+    }
+
+    public BlockRenderer getBlockRenderer() {
+        return blockRenderer;
     }
 }

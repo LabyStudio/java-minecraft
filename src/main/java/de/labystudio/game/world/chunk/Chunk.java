@@ -70,11 +70,6 @@ public class Chunk {
         Tessellator tessellator = Tessellator.instance;
         tessellator.startDrawing(7);
 
-        // Enable alpha
-        if (renderLayer == EnumWorldBlockLayer.CUTOUT) {
-            GL11.glAlphaFunc(519, -1.0F);
-        }
-
         // Render blocks
         for (int x = 0; x < SIZE; x++) {
             for (int y = 0; y < SIZE; y++) {
@@ -88,7 +83,7 @@ public class Chunk {
 
                         Block block = Block.getById(typeId);
                         if (block != null && ((renderLayer == EnumWorldBlockLayer.CUTOUT) == block.isTransparent())) {
-                            block.render(tessellator, this.world, absoluteX, absoluteY, absoluteZ);
+                            block.render(renderer, this.world, absoluteX, absoluteY, absoluteZ);
                         }
                     }
                 }

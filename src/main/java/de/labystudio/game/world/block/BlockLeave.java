@@ -8,6 +8,6 @@ public class BlockLeave extends Block {
 
     @Override
     public float getOpacity() {
-        return 0.9F;
+        return 0.3F;
     }
 }

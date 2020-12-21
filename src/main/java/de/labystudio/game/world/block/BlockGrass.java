@@ -9,7 +9,7 @@ public class BlockGrass extends Block {
     }
 
     @Override
-    protected int getTextureForFace(EnumBlockFace face) {
+    public int getTextureForFace(EnumBlockFace face) {
         switch (face) {
             case TOP:
                 return this.textureSlotId;

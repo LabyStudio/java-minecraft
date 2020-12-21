@@ -1,12 +1,8 @@
 package de.labystudio.game;
 
 import de.labystudio.game.player.Player;
-import de.labystudio.game.render.Gui;
-import de.labystudio.game.util.EnumWorldBlockLayer;
-import de.labystudio.game.util.AABB;
-import de.labystudio.game.util.EnumBlockFace;
-import de.labystudio.game.util.HitResult;
-import de.labystudio.game.util.Timer;
+import de.labystudio.game.render.gui.Gui;
+import de.labystudio.game.util.*;
 import de.labystudio.game.world.World;
 import de.labystudio.game.world.WorldRenderer;
 import de.labystudio.game.world.block.Block;
@@ -188,22 +184,31 @@ public class Game implements Runnable {
         }
 
         GL11.glClear(16640);
-        setupCamera(partialTicks);
 
-        GL11.glEnable(GL11.GL_CULL_FACE);
+        // Camera
+        setupCamera(partialTicks);
 
         // Fog
         GL11.glEnable(GL11.GL_FOG);
-        this.worldRenderer.setupFog();
+        this.worldRenderer.setupFog(this.player.isHeadInWater());
 
-        // Enable alpha
+        // Setup rendering for solid blocks
+        GL11.glDisable(GL11.GL_BLEND);
+        GL11.glDisable(GL11.GL_ALPHA_TEST);
+        GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+        GL11.glEnable(GL11.GL_CULL_FACE);
+
+        // Render solid blocks
+        this.worldRenderer.render((int) this.player.x >> 4, (int) this.player.z >> 4, EnumWorldBlockLayer.SOLID);
+
+        // Enable alpha and disable face culling
         GL11.glEnable(GL11.GL_BLEND);
         GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-        GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+        GL11.glEnable(GL11.GL_ALPHA_TEST);
+        GL11.glAlphaFunc(519, -1.0F);
+        GL11.glDisable(GL11.GL_CULL_FACE);
 
-
-        // Render world
-        this.worldRenderer.render((int) this.player.x >> 4, (int) this.player.z >> 4, EnumWorldBlockLayer.SOLID);
+        // Render cutout blocks (Leaves, glass, water..)
         this.worldRenderer.render((int) this.player.x >> 4, (int) this.player.z >> 4, EnumWorldBlockLayer.CUTOUT);
 
         // Render selection
@@ -222,48 +227,8 @@ public class Game implements Runnable {
     public void renderSelection(HitResult hitResult) {
         GL11.glColor4f(0.0F, 0.0F, 0.0F, 1.0F);
         GL11.glLineWidth(1);
-        drawBoundingBox(hitResult.x, hitResult.y, hitResult.z,
+        this.worldRenderer.getBlockRenderer().drawBoundingBox(hitResult.x, hitResult.y, hitResult.z,
                 hitResult.x + 1, hitResult.y + 1, hitResult.z + 1);
-    }
-
-    private void drawBoundingBox(double minX, double minY, double minZ,
-                                 double maxX, double maxY, double maxZ) {
-
-        // Bottom
-        GL11.glBegin(GL11.GL_LINE_LOOP);
-        GL11.glVertex3d(minX, minY, minZ);
-        GL11.glVertex3d(minX, minY, maxZ);
-        GL11.glVertex3d(maxX, minY, maxZ);
-        GL11.glVertex3d(maxX, minY, minZ);
-        GL11.glEnd();
-
-        // Ceiling
-        GL11.glBegin(GL11.GL_LINE_LOOP);
-        GL11.glVertex3d(minX, maxY, minZ);
-        GL11.glVertex3d(minX, maxY, maxZ);
-        GL11.glVertex3d(maxX, maxY, maxZ);
-        GL11.glVertex3d(maxX, maxY, minZ);
-        GL11.glEnd();
-
-        GL11.glBegin(GL11.GL_LINE_STRIP);
-        GL11.glVertex3d(minX, minY, minZ);
-        GL11.glVertex3d(minX, maxY, minZ);
-        GL11.glEnd();
-
-        GL11.glBegin(GL11.GL_LINE_STRIP);
-        GL11.glVertex3d(minX, minY, maxZ);
-        GL11.glVertex3d(minX, maxY, maxZ);
-        GL11.glEnd();
-
-        GL11.glBegin(GL11.GL_LINE_STRIP);
-        GL11.glVertex3d(maxX, minY, maxZ);
-        GL11.glVertex3d(maxX, maxY, maxZ);
-        GL11.glEnd();
-
-        GL11.glBegin(GL11.GL_LINE_STRIP);
-        GL11.glVertex3d(maxX, minY, minZ);
-        GL11.glVertex3d(maxX, maxY, minZ);
-        GL11.glEnd();
     }
 
     private HitResult getTargetBlock(float partialTicks) {
@@ -302,7 +267,7 @@ public class Game implements Runnable {
                 }
             }
 
-            if (this.world.getBlockAt(hitX, hitY, hitZ) != 0) {
+            if (this.world.isSolidBlockAt(hitX, hitY, hitZ)) {
                 if (targetFace == null) {
                     return null;
                 }
