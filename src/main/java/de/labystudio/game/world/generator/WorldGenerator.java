@@ -17,6 +17,9 @@ public final class WorldGenerator {
     private final NoiseGenerator hillNoise;
     private final NoiseGenerator sandInWaterNoise;
     private final NoiseGenerator forestNoise;
+    private final NoiseGenerator holeNoise;
+    private final NoiseGenerator islandNoise;
+    private final NoiseGenerator caveNoise;
 
     private final int waterLevel = 64;
 
@@ -33,22 +36,29 @@ public final class WorldGenerator {
         // Water noise
         this.sandInWaterNoise = new NoiseGeneratorOctaves(this.random, 8);
 
+        // Hole in hills and islands
+        this.holeNoise = new NoiseGeneratorOctaves(this.random, 3);
+        this.islandNoise = new NoiseGeneratorOctaves(this.random, 3);
+
+        // Caves
+        this.caveNoise = new NoiseGeneratorOctaves(this.random, 8);
+
         // Population
         this.forestNoise = new NoiseGeneratorOctaves(this.random, 8);
     }
 
     public void generateChunk(int chunkX, int chunkZ) {
         // For each block in the chunk
-        for (int x = 0; x < ChunkSection.SIZE; x++) {
-            for (int z = 0; z < ChunkSection.SIZE; z++) {
+        for (int relX = 0; relX < ChunkSection.SIZE; relX++) {
+            for (int relZ = 0; relZ < ChunkSection.SIZE; relZ++) {
 
                 // Absolute position of the block
-                int absoluteX = chunkX * ChunkSection.SIZE + x;
-                int absoluteZ = chunkZ * ChunkSection.SIZE + z;
+                int x = chunkX * ChunkSection.SIZE + relX;
+                int z = chunkZ * ChunkSection.SIZE + relZ;
 
                 // Extract height value of the noise
-                double heightValue = this.groundHeightNoise.perlin(absoluteX, absoluteZ);
-                double hillValue = Math.max(0, this.hillNoise.perlin(absoluteX / 18d, absoluteZ / 18d) * 6);
+                double heightValue = this.groundHeightNoise.perlin(x, z);
+                double hillValue = Math.max(0, this.hillNoise.perlin(x / 18d, z / 18d) * 6);
 
                 // Calculate final height for this position
                 int groundHeightY = (int) (heightValue / 10 + this.waterLevel + hillValue);
@@ -57,11 +67,11 @@ public final class WorldGenerator {
                     // Generate water
                     for (int y = 0; y <= this.waterLevel; y++) {
                         // Use noise to place sand in water
-                        boolean sandInWater = this.sandInWaterNoise.perlin(absoluteX, absoluteZ) < 0;
+                        boolean sandInWater = this.sandInWaterNoise.perlin(x, z) < 0;
                         Block block = y > groundHeightY ? Block.WATER : groundHeightY - y < 3 && sandInWater ? Block.SAND : Block.STONE;
 
                         // Send water, sand and stone
-                        this.world.setBlockAt(absoluteX, y, absoluteZ, block.getId());
+                        this.world.setBlockAt(x, y, z, block.getId());
                     }
                 } else {
                     // Generate height, the highest block is grass
@@ -71,9 +81,46 @@ public final class WorldGenerator {
                         Block block = y == groundHeightY ? isBeach ? Block.SAND : Block.GRASS : groundHeightY - y < 3 ? Block.DIRT : Block.STONE;
 
                         // Set sand, grass, dirt and stone
-                        this.world.setBlockAt(absoluteX, y, absoluteZ, block.getId());
+                        this.world.setBlockAt(x, y, z, block.getId());
                     }
                 }
+
+                /*
+                int holeY = (int) (this.holeNouse.perlin(-x / 20F, -z / 20F) * 3F + this.waterLevel + 10);
+                int holeHeight = (int) this.holeNouse.perlin(x / 4F, -z / 4F);
+
+                if (holeHeight > 0) {
+                    for (int y = holeY - holeHeight; y <= holeY + holeHeight; y++) {
+                        this.world.setBlockAt(x, y, z, 1);
+                    }
+                }
+                */
+
+                // Random holes in hills
+                int holePositionY = (int) (this.holeNoise.perlin(-x / 20F, -z / 20F) * 3F + this.waterLevel + 10);
+                int holeHeight = (int) this.holeNoise.perlin(x / 4F, -z / 4F);
+
+                if (holeHeight > 0) {
+                    for (int y = holePositionY - holeHeight; y <= holePositionY + holeHeight; y++) {
+                        if (y > this.waterLevel) {
+                            this.world.setBlockAt(x, y, z, 0);
+                        }
+                    }
+                }
+
+                // Floating islands
+                int islandPositionY = (int) (this.islandNoise.perlin(-x / 10F, -z / 10F) * 3F + this.waterLevel + 10);
+                int islandHeight = (int) (this.islandNoise.perlin(x / 4F, -z / 4F) * 4F);
+                int islandRarity = (int) (this.islandNoise.perlin(x / 40F, z / 40F) * 4F) - 10;
+
+                if (islandHeight > 0 && islandRarity > 0) {
+                    for (int y = islandPositionY - islandHeight; y <= islandPositionY + islandHeight; y++) {
+                        Block block = y == islandPositionY + islandHeight ? Block.GRASS : (islandPositionY + islandHeight) - y < 2 ? Block.DIRT : Block.STONE;
+                        this.world.setBlockAt(x, y, z, block.getId());
+                    }
+                }
+
+                // Caves
             }
         }
     }
