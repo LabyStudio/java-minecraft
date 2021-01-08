@@ -66,7 +66,7 @@ public class WorldRenderer {
     }
 
     public void render(int cameraChunkX, int cameraChunkZ, EnumWorldBlockLayer renderLayer) {
-        this.frustum.update();
+        this.frustum.calculateFrustum();
 
         for (Chunk chunk : this.world.chunks.values()) {
             int distanceX = Math.abs(cameraChunkX - chunk.getX());
