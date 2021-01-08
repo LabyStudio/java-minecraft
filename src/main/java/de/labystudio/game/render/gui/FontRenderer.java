@@ -1,7 +1,7 @@
 package de.labystudio.game.render.gui;
 
 import de.labystudio.game.render.Tessellator;
-import de.labystudio.game.util.Textures;
+import de.labystudio.game.util.TextureManager;
 import org.lwjgl.opengl.GL11;
 
 import javax.imageio.ImageIO;
@@ -24,7 +24,7 @@ public class FontRenderer {
     public FontRenderer(GuiRenderer gui, String name) throws IOException {
         this.gui = gui;
 
-        BufferedImage bitMap = ImageIO.read(Textures.class.getResourceAsStream(name));
+        BufferedImage bitMap = ImageIO.read(TextureManager.class.getResourceAsStream(name));
 
         // Calculate character width
         for (int i = 0; i < 128; i++) {
@@ -32,7 +32,7 @@ public class FontRenderer {
         }
 
         // Load texture
-        this.fontTextureId = Textures.loadTexture(name, GL11.GL_NEAREST);
+        this.fontTextureId = TextureManager.loadTexture(name, GL11.GL_NEAREST);
     }
 
     private int calculateCharacterWidthAt(BufferedImage bitMap, int indexX, int indexY) {

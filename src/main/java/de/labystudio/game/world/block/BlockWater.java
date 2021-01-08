@@ -1,7 +1,7 @@
 package de.labystudio.game.world.block;
 
 import de.labystudio.game.render.world.IWorldAccess;
-import de.labystudio.game.util.AABB;
+import de.labystudio.game.util.BoundingBox;
 import de.labystudio.game.util.EnumBlockFace;
 
 public class BlockWater extends Block {
@@ -27,8 +27,8 @@ public class BlockWater extends Block {
     }
 
     @Override
-    public AABB getBoundingBox(IWorldAccess world, int x, int y, int z) {
-        AABB aabb = this.boundingBox.clone();
+    public BoundingBox getBoundingBox(IWorldAccess world, int x, int y, int z) {
+        BoundingBox aabb = this.boundingBox.clone();
         if (world.getBlockAt(x, y + 1, z) != this.id) {
             aabb.maxY = 1.0F - 0.12F;
         }

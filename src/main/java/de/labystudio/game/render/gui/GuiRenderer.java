@@ -2,7 +2,7 @@ package de.labystudio.game.render.gui;
 
 import de.labystudio.game.GameWindow;
 import de.labystudio.game.render.Tessellator;
-import de.labystudio.game.util.Textures;
+import de.labystudio.game.util.TextureManager;
 import org.lwjgl.opengl.GL11;
 
 public class GuiRenderer {
@@ -15,7 +15,7 @@ public class GuiRenderer {
     private int height;
 
     public void loadTextures() {
-        this.textureId = Textures.loadTexture("/icons.png", GL11.GL_NEAREST);
+        this.textureId = TextureManager.loadTexture("/icons.png", GL11.GL_NEAREST);
     }
 
     public void init(GameWindow gameWindow) {

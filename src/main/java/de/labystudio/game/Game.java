@@ -185,7 +185,7 @@ public class Game implements Runnable {
                     int y = hitResult.y + hitResult.face.y;
                     int z = hitResult.z + hitResult.face.z;
 
-                    AABB placedBoundingBox = new AABB(x, y, z, x + 1, y + 1, z + 1);
+                    BoundingBox placedBoundingBox = new BoundingBox(x, y, z, x + 1, y + 1, z + 1);
 
                     // Don't place blocks if the player is standing there
                     if (!placedBoundingBox.intersects(this.player.boundingBox)) {
@@ -211,7 +211,8 @@ public class Game implements Runnable {
             }
         }
 
-        GL11.glClear(16640);
+        // Clear color and depth buffer
+        GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
 
         // Camera
         setupCamera(partialTicks);

@@ -1,8 +1,7 @@
 package de.labystudio.game.world;
 
-import de.labystudio.game.Game;
 import de.labystudio.game.render.world.IWorldAccess;
-import de.labystudio.game.util.AABB;
+import de.labystudio.game.util.BoundingBox;
 import de.labystudio.game.util.EnumBlockFace;
 import de.labystudio.game.world.block.Block;
 import de.labystudio.game.world.chunk.Chunk;
@@ -86,8 +85,8 @@ public class World implements IWorldAccess {
         }
     }
 
-    public ArrayList<AABB> getCollisionBoxes(AABB aabb) {
-        ArrayList<AABB> aABBs = new ArrayList<>();
+    public ArrayList<BoundingBox> getCollisionBoxes(BoundingBox aabb) {
+        ArrayList<BoundingBox> boundingBoxList = new ArrayList<>();
 
         int minX = (int) (Math.floor(aabb.minX) - 1);
         int maxX = (int) (Math.ceil(aabb.maxX) + 1);
@@ -100,12 +99,12 @@ public class World implements IWorldAccess {
             for (int y = minY; y < maxY; y++) {
                 for (int z = minZ; z < maxZ; z++) {
                     if (isSolidBlockAt(x, y, z)) {
-                        aABBs.add(new AABB(x, y, z, x + 1, y + 1, z + 1));
+                        boundingBoxList.add(new BoundingBox(x, y, z, x + 1, y + 1, z + 1));
                     }
                 }
             }
         }
-        return aABBs;
+        return boundingBoxList;
     }
 
     public void blockChanged(int x, int y, int z) {

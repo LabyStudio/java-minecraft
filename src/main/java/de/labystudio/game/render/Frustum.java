@@ -1,6 +1,6 @@
 package de.labystudio.game.render;
 
-import de.labystudio.game.util.AABB;
+import de.labystudio.game.util.BoundingBox;
 import de.labystudio.game.world.World;
 import de.labystudio.game.world.chunk.Chunk;
 import de.labystudio.game.world.chunk.ChunkSection;
@@ -185,7 +185,7 @@ public class Frustum {
         return true;
     }
 
-    public boolean cubeInFrustum(AABB aabb) {
+    public boolean cubeInFrustum(BoundingBox aabb) {
         return cubeInFrustum(aabb.minX, aabb.minY, aabb.minZ, aabb.maxX, aabb.maxY, aabb.maxZ);
     }
 

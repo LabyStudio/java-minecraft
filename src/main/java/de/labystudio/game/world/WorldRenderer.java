@@ -4,7 +4,7 @@ import de.labystudio.game.render.Frustum;
 import de.labystudio.game.render.GLAllocation;
 import de.labystudio.game.render.world.BlockRenderer;
 import de.labystudio.game.util.EnumWorldBlockLayer;
-import de.labystudio.game.util.Textures;
+import de.labystudio.game.util.TextureManager;
 import de.labystudio.game.world.chunk.Chunk;
 import de.labystudio.game.world.chunk.ChunkSection;
 import org.lwjgl.opengl.GL11;
@@ -19,7 +19,7 @@ public class WorldRenderer {
     public static final int RENDER_DISTANCE = 8;
 
     private final FloatBuffer colorBuffer = GLAllocation.createDirectFloatBuffer(16);
-    public final int textureId = Textures.loadTexture("/terrain.png", GL11.GL_NEAREST);
+    public final int textureId = TextureManager.loadTexture("/terrain.png", GL11.GL_NEAREST);
 
     private final World world;
 

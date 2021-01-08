@@ -1,7 +1,7 @@
 package de.labystudio.game.world.block;
 
 import de.labystudio.game.render.world.IWorldAccess;
-import de.labystudio.game.util.AABB;
+import de.labystudio.game.util.BoundingBox;
 import de.labystudio.game.util.EnumBlockFace;
 import de.labystudio.game.world.WorldRenderer;
 
@@ -24,7 +24,7 @@ public abstract class Block {
     protected final int textureSlotId;
 
     // Block bounding box
-    protected AABB boundingBox = new AABB(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
+    protected BoundingBox boundingBox = new BoundingBox(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
 
     protected Block(int id) {
         this(id, id);
@@ -65,7 +65,7 @@ public abstract class Block {
         return 1.0F;
     }
 
-    public AABB getBoundingBox(IWorldAccess world, int x, int y, int z) {
+    public BoundingBox getBoundingBox(IWorldAccess world, int x, int y, int z) {
         return this.boundingBox;
     }
 

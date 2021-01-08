@@ -1,6 +1,6 @@
 package de.labystudio.game.player;
 
-import de.labystudio.game.util.AABB;
+import de.labystudio.game.util.BoundingBox;
 import de.labystudio.game.world.World;
 import de.labystudio.game.world.block.Block;
 import org.lwjgl.input.Keyboard;
@@ -26,7 +26,7 @@ public class Player {
     public float yaw;
     public float pitch;
 
-    public AABB boundingBox;
+    public BoundingBox boundingBox;
     public boolean onGround = false;
     public boolean collision = false;
 
@@ -66,7 +66,7 @@ public class Player {
         this.z = z;
         float w = 0.3F;
         float h = 0.9F;
-        this.boundingBox = new AABB(x - w, y - h, z - w, x + w, y + h, z + w);
+        this.boundingBox = new BoundingBox(x - w, y - h, z - w, x + w, y + h, z + w);
     }
 
     public void turn(float xo, float yo) {
@@ -396,20 +396,20 @@ public class Player {
         }
 
         // Get level tiles as bounding boxes
-        List<AABB> aABBs = this.world.getCollisionBoxes(this.boundingBox.expand(targetX, targetY, targetZ));
+        List<BoundingBox> boundingBoxList = this.world.getCollisionBoxes(this.boundingBox.expand(targetX, targetY, targetZ));
 
         // Move bounding box
-        for (AABB aABB : aABBs) {
+        for (BoundingBox aABB : boundingBoxList) {
             targetY = aABB.clipYCollide(this.boundingBox, targetY);
         }
         this.boundingBox.move(0.0F, targetY, 0.0F);
 
-        for (AABB aABB : aABBs) {
+        for (BoundingBox aABB : boundingBoxList) {
             targetX = aABB.clipXCollide(this.boundingBox, targetX);
         }
         this.boundingBox.move(targetX, 0.0F, 0.0F);
 
-        for (AABB aABB : aABBs) {
+        for (BoundingBox aABB : boundingBoxList) {
             targetZ = aABB.clipZCollide(this.boundingBox, targetZ);
         }
         this.boundingBox.move(0.0F, 0.0F, targetZ);
