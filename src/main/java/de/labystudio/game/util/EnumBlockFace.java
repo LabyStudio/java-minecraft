@@ -19,7 +19,7 @@ public enum EnumBlockFace {
     }
 
     public float getShading() {
-        return isXAxis() ? 0.6F : isYAxis() ? 1.0F : 0.8F;
+        return this.isXAxis() ? 0.6F : this.isYAxis() ? 1.0F : 0.8F;
     }
 
     public boolean isXAxis() {

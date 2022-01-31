@@ -1,6 +1,10 @@
-# Java 3D Game
+# Minecraft recode in Java
 
-#### Features
+This is a sandbox that provides all basic features of Minecraft.<br>
+The main purpose of this project is to understand the render and physics engine of Minecraft.<br>
+It is a fork of the [first version](https://github.com/thecodeofnotch/rd-131655) of Minecraft.
+
+### Feature Overview
 - Block rendering
 - Block collision
 - Player movement
@@ -23,13 +27,13 @@
 
 ![Ingame](.artwork/ingame.png)
 
-#### Setup
+### Setup
 - Clone the project
 - Set your working directory to ``./run``
-- Run main class ``de.labystudio.game.Game``
+- Run main class ``de.labystudio.game.Minecraft``
 - Wait a few seconds for the world generation
 
-#### Controls
+### Controls
 ```
 W: Forward
 S: Backwards
@@ -49,14 +53,14 @@ ESC: Toggle game focus
 R: Return to spawn
 ```
 
-#### Smooth lightning example
+### Smooth lightning example
 ![Smooth Lightning](.artwork/smooth_lightning.png)
 
-#### Known issues
+### Known issues
 - Mouse over block calculation is acting weird and doesn't work sometimes
 - No light updates during world generation
 
-#### Planned
+### Planned
 - Generate new chunk if not generated yet (Infinite map)
 - Multiplayer
 - Entity rendering

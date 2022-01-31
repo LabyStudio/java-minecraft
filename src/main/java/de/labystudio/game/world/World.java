@@ -25,14 +25,14 @@ public class World implements IWorldAccess {
     public WorldFormat format = new WorldFormat(this, new File("saves/World1"));
 
     public World() {
-        load();
+        this.load();
     }
 
     public void load() {
         if (this.format.exists()) {
             // Load chunks
             this.format.load((x, z, array) -> {
-                Chunk chunk = getChunkAt(x, z);
+                Chunk chunk = this.getChunkAt(x, z);
                 chunk.setSections(array);
                 chunk.queueForRebuild();
             });
@@ -77,7 +77,7 @@ public class World implements IWorldAccess {
                 // Get next position to update
                 Long positionIndex = this.lightUpdateQueue.poll();
                 if (positionIndex != null) {
-                    updateBlockLightsAtXZ((int) (positionIndex >> 32L), positionIndex.intValue());
+                    this.updateBlockLightsAtXZ((int) (positionIndex >> 32L), positionIndex.intValue());
                 } else {
                     break;
                 }
@@ -98,7 +98,7 @@ public class World implements IWorldAccess {
         for (int x = minX; x < maxX; x++) {
             for (int y = minY; y < maxY; y++) {
                 for (int z = minZ; z < maxZ; z++) {
-                    if (isSolidBlockAt(x, y, z)) {
+                    if (this.isSolidBlockAt(x, y, z)) {
                         boundingBoxList.add(new BoundingBox(x, y, z, x + 1, y + 1, z + 1));
                     }
                 }
@@ -108,7 +108,7 @@ public class World implements IWorldAccess {
     }
 
     public void blockChanged(int x, int y, int z) {
-        setDirty(x - 1, y - 1, z - 1, x + 1, y + 1, z + 1);
+        this.setDirty(x - 1, y - 1, z - 1, x + 1, y + 1, z + 1);
     }
 
     public void allChunksChanged() {
@@ -133,36 +133,36 @@ public class World implements IWorldAccess {
         for (int x = minX; x <= maxX; x++) {
             for (int y = minY; y <= maxY; y++) {
                 for (int z = minZ; z <= maxZ; z++) {
-                    getChunkAt(x, y, z).queueForRebuild();
+                    this.getChunkAt(x, y, z).queueForRebuild();
                 }
             }
         }
     }
 
     public void setBlockAt(int x, int y, int z, int type) {
-        ChunkSection chunkSection = getChunkAtBlock(x, y, z);
+        ChunkSection chunkSection = this.getChunkAtBlock(x, y, z);
         if (chunkSection != null) {
             chunkSection.setBlockAt(x & 15, y & 15, z & 15, type);
 
             if (this.updateLightning) {
-                updateBlockLightAt(x, y, z);
+                this.updateBlockLightAt(x, y, z);
             }
 
-            blockChanged(x, y, z);
+            this.blockChanged(x, y, z);
         }
     }
 
     public void updateBlockLightAt(int x, int y, int z) {
         // Calculate brightness for target block
-        int lightLevel = isHighestBlockAt(x, y, z) ? 15 : calculateLightAt(x, y, z);
+        int lightLevel = this.isHighestBlockAt(x, y, z) ? 15 : this.calculateLightAt(x, y, z);
 
         // Update target block light
-        getChunkAtBlock(x, y, z).setLightAt(x & 15, y & 15, z & 15, lightLevel);
+        this.getChunkAtBlock(x, y, z).setLightAt(x & 15, y & 15, z & 15, lightLevel);
 
         // Update block lights below the target block and the surrounding blocks
         for (int offsetX = -1; offsetX <= 1; offsetX++) {
             for (int offsetZ = -1; offsetZ <= 1; offsetZ++) {
-                updateBlockLightsAtXZ(x + offsetX, z + offsetZ);
+                this.updateBlockLightsAtXZ(x + offsetX, z + offsetZ);
             }
         }
     }
@@ -173,22 +173,22 @@ public class World implements IWorldAccess {
 
         // Scan from the top to the bottom
         for (int y = TOTAL_HEIGHT; y >= 0; y--) {
-            if (!isTransparentBlockAt(x, y, z)) {
+            if (!this.isTransparentBlockAt(x, y, z)) {
                 // Sun is blocked because of solid block
                 skyLevel = 0;
             } else {
                 // Get opacity of this block
-                short typeId = getBlockAt(x, y, z);
+                short typeId = this.getBlockAt(x, y, z);
                 float translucence = typeId == 0 ? 1.0F : 1.0F - Block.getById(typeId).getOpacity();
 
                 // Decrease strength of the skylight by the opacity of the block
                 skyLevel *= translucence;
 
                 // Get previous block light
-                float prevBlockLight = getLightAt(x, y, z);
+                float prevBlockLight = this.getLightAt(x, y, z);
 
                 // Combine skylight with the calculated block light and decrease strength by the opacity of the block
-                int blockLight = (int) (Math.max(skyLevel, calculateLightAt(x, y, z)) * translucence);
+                int blockLight = (int) (Math.max(skyLevel, this.calculateLightAt(x, y, z)) * translucence);
 
                 // Did one of the light change inside of the range?
                 if (prevBlockLight != blockLight) {
@@ -196,7 +196,7 @@ public class World implements IWorldAccess {
                 }
 
                 // Apply the new light to the block
-                setLightAt(x, y, z, blockLight);
+                this.setLightAt(x, y, z, blockLight);
             }
         }
 
@@ -216,7 +216,7 @@ public class World implements IWorldAccess {
     }
 
     private void setLightAt(int x, int y, int z, int light) {
-        ChunkSection chunkSection = getChunkAtBlock(x, y, z);
+        ChunkSection chunkSection = this.getChunkAtBlock(x, y, z);
         if (chunkSection != null) {
             chunkSection.setLightAt(x & 15, y & 15, z & 15, light);
             chunkSection.queueForRebuild();
@@ -225,13 +225,13 @@ public class World implements IWorldAccess {
 
     @Override
     public int getLightAt(int x, int y, int z) {
-        ChunkSection chunkSection = getChunkAtBlock(x, y, z);
+        ChunkSection chunkSection = this.getChunkAtBlock(x, y, z);
         return chunkSection == null ? 15 : chunkSection.getLightAt(x & 15, y & 15, z & 15);
     }
 
     private boolean isHighestBlockAt(int x, int y, int z) {
         for (int i = y + 1; i < TOTAL_HEIGHT; i++) {
-            if (isSolidBlockAt(x, i, z)) {
+            if (this.isSolidBlockAt(x, i, z)) {
                 return false;
             }
         }
@@ -240,7 +240,7 @@ public class World implements IWorldAccess {
 
     public int getHighestBlockYAt(int x, int z) {
         for (int y = TOTAL_HEIGHT; y > 0; y--) {
-            if (isSolidBlockAt(x, y, z)) {
+            if (this.isSolidBlockAt(x, y, z)) {
                 return y;
             }
         }
@@ -252,8 +252,8 @@ public class World implements IWorldAccess {
 
         // Get maximal brightness of surround blocks
         for (EnumBlockFace face : EnumBlockFace.values()) {
-            if (isTransparentBlockAt(x + face.x, y + face.y, z + face.z)) {
-                int brightness = getLightAt(x + face.x, y + face.y, z + face.z);
+            if (this.isTransparentBlockAt(x + face.x, y + face.y, z + face.z)) {
+                int brightness = this.getLightAt(x + face.x, y + face.y, z + face.z);
 
                 maxBrightness = Math.max(maxBrightness, brightness);
             }
@@ -264,23 +264,23 @@ public class World implements IWorldAccess {
     }
 
     public boolean isSolidBlockAt(int x, int y, int z) {
-        short typeId = getBlockAt(x, y, z);
+        short typeId = this.getBlockAt(x, y, z);
         return typeId != 0 && Block.getById(typeId).isSolid();
     }
 
     public boolean isTransparentBlockAt(int x, int y, int z) {
-        short typeId = getBlockAt(x, y, z);
+        short typeId = this.getBlockAt(x, y, z);
         return typeId == 0 || Block.getById(typeId).isTransparent();
     }
 
     @Override
     public short getBlockAt(int x, int y, int z) {
-        ChunkSection chunkSection = getChunkAtBlock(x, y, z);
+        ChunkSection chunkSection = this.getChunkAtBlock(x, y, z);
         return chunkSection == null ? 0 : chunkSection.getBlockAt(x & 15, y & 15, z & 15);
     }
 
     public ChunkSection getChunkAt(int chunkX, int layerY, int chunkZ) {
-        return getChunkAt(chunkX, chunkZ).getSection(layerY);
+        return this.getChunkAt(chunkX, chunkZ).getSection(layerY);
     }
 
     public Chunk getChunkAt(int x, int z) {
@@ -303,11 +303,11 @@ public class World implements IWorldAccess {
     }
 
     public boolean isChunkLoadedAt(int x, int y, int z) {
-        return isChunkLoaded(x >> 4, z >> 4);
+        return this.isChunkLoaded(x >> 4, z >> 4);
     }
 
     public ChunkSection getChunkAtBlock(int x, int y, int z) {
-        Chunk chunk = getChunkAt(x >> 4, z >> 4);
+        Chunk chunk = this.getChunkAt(x >> 4, z >> 4);
         return y < 0 || y > TOTAL_HEIGHT ? null : chunk.getSection(y >> 4);
     }
 }

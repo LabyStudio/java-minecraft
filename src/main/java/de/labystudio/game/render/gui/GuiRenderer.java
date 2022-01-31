@@ -1,6 +1,6 @@
 package de.labystudio.game.render.gui;
 
-import de.labystudio.game.GameWindow;
+import de.labystudio.game.MinecraftWindow;
 import de.labystudio.game.render.Tessellator;
 import de.labystudio.game.util.TextureManager;
 import org.lwjgl.opengl.GL11;
@@ -8,7 +8,7 @@ import org.lwjgl.opengl.GL11;
 public class GuiRenderer {
 
     private int textureId;
-    private int zLevel = 0;
+    private final int zLevel = 0;
 
     private int scaleFactor;
     private int width;
@@ -18,7 +18,7 @@ public class GuiRenderer {
         this.textureId = TextureManager.loadTexture("/icons.png", GL11.GL_NEAREST);
     }
 
-    public void init(GameWindow gameWindow) {
+    public void init(MinecraftWindow gameWindow) {
         this.width = gameWindow.displayWidth;
         this.height = gameWindow.displayHeight;
         for (this.scaleFactor = 1; this.width / (this.scaleFactor + 1) >= 320 && this.height / (this.scaleFactor + 1) >= 240; this.scaleFactor++) {
@@ -44,7 +44,7 @@ public class GuiRenderer {
         GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
 
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, this.textureId);
-        drawTexturedModalRect(this.width / 2 - 7, this.height / 2 - 7, 0, 0, 16, 16);
+        this.drawTexturedModalRect(this.width / 2 - 7, this.height / 2 - 7, 0, 0, 16, 16);
 
         GL11.glDisable(GL11.GL_BLEND);
     }
@@ -52,7 +52,7 @@ public class GuiRenderer {
     public void drawTexturedModalRect(int left, int top, int offsetX, int offsetY, int width, int height) {
         Tessellator tessellator = Tessellator.instance;
         tessellator.startDrawingQuads();
-        drawTexturedModalRect(tessellator, left, top, offsetX, offsetY, width, height, width, height, 256, 256);
+        this.drawTexturedModalRect(tessellator, left, top, offsetX, offsetY, width, height, width, height, 256, 256);
         tessellator.draw();
     }
 
@@ -64,9 +64,9 @@ public class GuiRenderer {
         float factorX = 1.0F / bitMapWidth;
         float factorY = 1.0F / bitmapHeight;
 
-        tessellator.addVertexWithUV(x, y + height, zLevel, u * factorX, (v + vHeight) * factorY);
-        tessellator.addVertexWithUV(x + width, y + height, zLevel, (u + uWidth) * factorX, (v + vHeight) * factorY);
-        tessellator.addVertexWithUV(x + width, y, zLevel, (u + uWidth) * factorX, v * factorY);
-        tessellator.addVertexWithUV(x, y, zLevel, u * factorX, v * factorY);
+        tessellator.addVertexWithUV(x, y + height, this.zLevel, u * factorX, (v + vHeight) * factorY);
+        tessellator.addVertexWithUV(x + width, y + height, this.zLevel, (u + uWidth) * factorX, (v + vHeight) * factorY);
+        tessellator.addVertexWithUV(x + width, y, this.zLevel, (u + uWidth) * factorX, v * factorY);
+        tessellator.addVertexWithUV(x, y, this.zLevel, u * factorX, v * factorY);
     }
 }

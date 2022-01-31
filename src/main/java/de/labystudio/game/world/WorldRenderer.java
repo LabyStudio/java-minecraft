@@ -50,14 +50,14 @@ public class WorldRenderer {
         if (inWater) {
             GL11.glFogi(GL11.GL_FOG_MODE, GL11.GL_EXP);
             GL11.glFogf(GL11.GL_FOG_DENSITY, 0.1F); // Fog distance
-            GL11.glFog(GL11.GL_FOG_COLOR, putColor(0.2F, 0.2F, 0.4F, 1.0F));
+            GL11.glFog(GL11.GL_FOG_COLOR, this.putColor(0.2F, 0.2F, 0.4F, 1.0F));
         } else {
             int viewDistance = WorldRenderer.RENDER_DISTANCE * ChunkSection.SIZE;
 
             GL11.glFogi(GL11.GL_FOG_MODE, GL11.GL_LINEAR);
             GL11.glFogf(GL11.GL_FOG_START, viewDistance / 4.0F); // Fog start
             GL11.glFogf(GL11.GL_FOG_END, viewDistance); // Fog end
-            GL11.glFog(GL11.GL_FOG_COLOR, putColor(0.6222222F - 0.05F, 0.5F + 0.1F, 1.0F, 1.0F));
+            GL11.glFog(GL11.GL_FOG_COLOR, this.putColor(0.6222222F - 0.05F, 0.5F + 0.1F, 1.0F, 1.0F));
         }
     }
 
@@ -112,6 +112,6 @@ public class WorldRenderer {
     }
 
     public BlockRenderer getBlockRenderer() {
-        return blockRenderer;
+        return this.blockRenderer;
     }
 }

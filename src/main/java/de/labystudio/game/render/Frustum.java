@@ -50,8 +50,8 @@ public class Frustum {
      * Frustum constructor.
      */
     public Frustum() {
-        modl_b = BufferUtils.createFloatBuffer(16);
-        proj_b = BufferUtils.createFloatBuffer(16);
+        this.modl_b = BufferUtils.createFloatBuffer(16);
+        this.proj_b = BufferUtils.createFloatBuffer(16);
     }
 
     ///////////////////////////////// NORMALIZE PLANE \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\*
@@ -89,17 +89,17 @@ public class Frustum {
         // glGetFloat() is used to extract information about our OpenGL world.
         // Below, we pass in GL_PROJECTION_MATRIX to abstract our projection matrix.
         // It then stores the matrix into an array of [16].
-        proj_b.rewind();
-        glGetFloat(GL_PROJECTION_MATRIX, proj_b);
-        proj_b.rewind();
-        proj_b.get(proj);
+        this.proj_b.rewind();
+        glGetFloat(GL_PROJECTION_MATRIX, this.proj_b);
+        this.proj_b.rewind();
+        this.proj_b.get(proj);
 
         // By passing in GL_MODELVIEW_MATRIX, we can abstract our model view matrix.
         // This also stores it in an array of [16].
-        modl_b.rewind();
-        glGetFloat(GL_MODELVIEW_MATRIX, modl_b);
-        modl_b.rewind();
-        modl_b.get(modl);
+        this.modl_b.rewind();
+        glGetFloat(GL_MODELVIEW_MATRIX, this.modl_b);
+        this.modl_b.rewind();
+        this.modl_b.get(modl);
 
         // Now that we have our modelview and projection matrix, if we combine these 2 matrices,
         // it will give us our clipping planes.  To combine 2 matrices, we multiply them.
@@ -128,61 +128,61 @@ public class Frustum {
         // the clipping planes we received above and extract the sides from them.
 
         // This will extract the RIGHT side of the frustum
-        m_Frustum[RIGHT][A] = clip[3] - clip[0];
-        m_Frustum[RIGHT][B] = clip[7] - clip[4];
-        m_Frustum[RIGHT][C] = clip[11] - clip[8];
-        m_Frustum[RIGHT][D] = clip[15] - clip[12];
+        this.m_Frustum[RIGHT][A] = clip[3] - clip[0];
+        this.m_Frustum[RIGHT][B] = clip[7] - clip[4];
+        this.m_Frustum[RIGHT][C] = clip[11] - clip[8];
+        this.m_Frustum[RIGHT][D] = clip[15] - clip[12];
 
         // Now that we have a normal (A,B,C) and a distance (D) to the plane,
         // we want to normalize that normal and distance.
 
         // Normalize the RIGHT side
-        normalizePlane(m_Frustum, RIGHT);
+        this.normalizePlane(this.m_Frustum, RIGHT);
 
         // This will extract the LEFT side of the frustum
-        m_Frustum[LEFT][A] = clip[3] + clip[0];
-        m_Frustum[LEFT][B] = clip[7] + clip[4];
-        m_Frustum[LEFT][C] = clip[11] + clip[8];
-        m_Frustum[LEFT][D] = clip[15] + clip[12];
+        this.m_Frustum[LEFT][A] = clip[3] + clip[0];
+        this.m_Frustum[LEFT][B] = clip[7] + clip[4];
+        this.m_Frustum[LEFT][C] = clip[11] + clip[8];
+        this.m_Frustum[LEFT][D] = clip[15] + clip[12];
 
         // Normalize the LEFT side
-        normalizePlane(m_Frustum, LEFT);
+        this.normalizePlane(this.m_Frustum, LEFT);
 
         // This will extract the BOTTOM side of the frustum
-        m_Frustum[BOTTOM][A] = clip[3] + clip[1];
-        m_Frustum[BOTTOM][B] = clip[7] + clip[5];
-        m_Frustum[BOTTOM][C] = clip[11] + clip[9];
-        m_Frustum[BOTTOM][D] = clip[15] + clip[13];
+        this.m_Frustum[BOTTOM][A] = clip[3] + clip[1];
+        this.m_Frustum[BOTTOM][B] = clip[7] + clip[5];
+        this.m_Frustum[BOTTOM][C] = clip[11] + clip[9];
+        this.m_Frustum[BOTTOM][D] = clip[15] + clip[13];
 
         // Normalize the BOTTOM side
-        normalizePlane(m_Frustum, BOTTOM);
+        this.normalizePlane(this.m_Frustum, BOTTOM);
 
         // This will extract the TOP side of the frustum
-        m_Frustum[TOP][A] = clip[3] - clip[1];
-        m_Frustum[TOP][B] = clip[7] - clip[5];
-        m_Frustum[TOP][C] = clip[11] - clip[9];
-        m_Frustum[TOP][D] = clip[15] - clip[13];
+        this.m_Frustum[TOP][A] = clip[3] - clip[1];
+        this.m_Frustum[TOP][B] = clip[7] - clip[5];
+        this.m_Frustum[TOP][C] = clip[11] - clip[9];
+        this.m_Frustum[TOP][D] = clip[15] - clip[13];
 
         // Normalize the TOP side
-        normalizePlane(m_Frustum, TOP);
+        this.normalizePlane(this.m_Frustum, TOP);
 
         // This will extract the BACK side of the frustum
-        m_Frustum[BACK][A] = clip[3] - clip[2];
-        m_Frustum[BACK][B] = clip[7] - clip[6];
-        m_Frustum[BACK][C] = clip[11] - clip[10];
-        m_Frustum[BACK][D] = clip[15] - clip[14];
+        this.m_Frustum[BACK][A] = clip[3] - clip[2];
+        this.m_Frustum[BACK][B] = clip[7] - clip[6];
+        this.m_Frustum[BACK][C] = clip[11] - clip[10];
+        this.m_Frustum[BACK][D] = clip[15] - clip[14];
 
         // Normalize the BACK side
-        normalizePlane(m_Frustum, BACK);
+        this.normalizePlane(this.m_Frustum, BACK);
 
         // This will extract the FRONT side of the frustum
-        m_Frustum[FRONT][A] = clip[3] + clip[2];
-        m_Frustum[FRONT][B] = clip[7] + clip[6];
-        m_Frustum[FRONT][C] = clip[11] + clip[10];
-        m_Frustum[FRONT][D] = clip[15] + clip[14];
+        this.m_Frustum[FRONT][A] = clip[3] + clip[2];
+        this.m_Frustum[FRONT][B] = clip[7] + clip[6];
+        this.m_Frustum[FRONT][C] = clip[11] + clip[10];
+        this.m_Frustum[FRONT][D] = clip[15] + clip[14];
 
         // Normalize the FRONT side
-        normalizePlane(m_Frustum, FRONT);
+        this.normalizePlane(this.m_Frustum, FRONT);
     }
 
     // The code below will allow us to make checks within the frustum.  For example,
@@ -199,7 +199,7 @@ public class Frustum {
         // Go through all the sides of the frustum
         for (int i = 0; i < 6; i++) {
             // Calculate the plane equation and check if the point is behind a side of the frustum
-            if (m_Frustum[i][A] * x + m_Frustum[i][B] * y + m_Frustum[i][C] * z + m_Frustum[i][D] <= 0) {
+            if (this.m_Frustum[i][A] * x + this.m_Frustum[i][B] * y + this.m_Frustum[i][C] * z + this.m_Frustum[i][D] <= 0) {
                 // The point was behind a side, so it ISN'T in the frustum
                 return false;
             }
@@ -219,7 +219,7 @@ public class Frustum {
         // Go through all the sides of the frustum
         for (int i = 0; i < 6; i++) {
             // If the center of the sphere is farther away from the plane than the radius
-            if (m_Frustum[i][A] * x + m_Frustum[i][B] * y + m_Frustum[i][C] * z + m_Frustum[i][D] <= -radius) {
+            if (this.m_Frustum[i][A] * x + this.m_Frustum[i][B] * y + this.m_Frustum[i][C] * z + this.m_Frustum[i][D] <= -radius) {
                 // The distance was greater than the radius so the sphere is outside of the frustum
                 return false;
             }
@@ -247,21 +247,21 @@ public class Frustum {
         // This is rare and shouldn't effect the overall rendering speed.
 
         for (int i = 0; i < 6; i++) {
-            if (m_Frustum[i][A] * minX + m_Frustum[i][B] * minY + m_Frustum[i][C] * minZ + m_Frustum[i][D] > 0)
+            if (this.m_Frustum[i][A] * minX + this.m_Frustum[i][B] * minY + this.m_Frustum[i][C] * minZ + this.m_Frustum[i][D] > 0)
                 continue;
-            if (m_Frustum[i][A] * maxX + m_Frustum[i][B] * minY + m_Frustum[i][C] * minZ + m_Frustum[i][D] > 0)
+            if (this.m_Frustum[i][A] * maxX + this.m_Frustum[i][B] * minY + this.m_Frustum[i][C] * minZ + this.m_Frustum[i][D] > 0)
                 continue;
-            if (m_Frustum[i][A] * minX + m_Frustum[i][B] * maxY + m_Frustum[i][C] * minZ + m_Frustum[i][D] > 0)
+            if (this.m_Frustum[i][A] * minX + this.m_Frustum[i][B] * maxY + this.m_Frustum[i][C] * minZ + this.m_Frustum[i][D] > 0)
                 continue;
-            if (m_Frustum[i][A] * maxX + m_Frustum[i][B] * maxY + m_Frustum[i][C] * minZ + m_Frustum[i][D] > 0)
+            if (this.m_Frustum[i][A] * maxX + this.m_Frustum[i][B] * maxY + this.m_Frustum[i][C] * minZ + this.m_Frustum[i][D] > 0)
                 continue;
-            if (m_Frustum[i][A] * minX + m_Frustum[i][B] * minY + m_Frustum[i][C] * maxZ + m_Frustum[i][D] > 0)
+            if (this.m_Frustum[i][A] * minX + this.m_Frustum[i][B] * minY + this.m_Frustum[i][C] * maxZ + this.m_Frustum[i][D] > 0)
                 continue;
-            if (m_Frustum[i][A] * maxX + m_Frustum[i][B] * minY + m_Frustum[i][C] * maxZ + m_Frustum[i][D] > 0)
+            if (this.m_Frustum[i][A] * maxX + this.m_Frustum[i][B] * minY + this.m_Frustum[i][C] * maxZ + this.m_Frustum[i][D] > 0)
                 continue;
-            if (m_Frustum[i][A] * minX + m_Frustum[i][B] * maxY + m_Frustum[i][C] * maxZ + m_Frustum[i][D] > 0)
+            if (this.m_Frustum[i][A] * minX + this.m_Frustum[i][B] * maxY + this.m_Frustum[i][C] * maxZ + this.m_Frustum[i][D] > 0)
                 continue;
-            if (m_Frustum[i][A] * maxX + m_Frustum[i][B] * maxY + m_Frustum[i][C] * maxZ + m_Frustum[i][D] > 0)
+            if (this.m_Frustum[i][A] * maxX + this.m_Frustum[i][B] * maxY + this.m_Frustum[i][C] * maxZ + this.m_Frustum[i][D] > 0)
                 continue;
 
             // If we get here, it isn't in the frustum
@@ -272,14 +272,14 @@ public class Frustum {
     }
 
     public boolean cubeInFrustum(BoundingBox aabb) {
-        return cubeInFrustum(
+        return this.cubeInFrustum(
                 (float) aabb.minX, (float) aabb.minY, (float) aabb.minZ,
                 (float) aabb.maxX, (float) aabb.maxY, (float) aabb.maxZ
         );
     }
 
     public boolean cubeInFrustum(ChunkSection chunkSection) {
-        return cubeInFrustum(
+        return this.cubeInFrustum(
                 chunkSection.x * ChunkSection.SIZE,
                 chunkSection.y * ChunkSection.SIZE,
                 chunkSection.z * ChunkSection.SIZE,
@@ -290,7 +290,7 @@ public class Frustum {
     }
 
     public boolean cubeInFrustum(Chunk chunk) {
-        return cubeInFrustum(
+        return this.cubeInFrustum(
                 chunk.getX() * ChunkSection.SIZE,
                 0,
                 chunk.getZ() * ChunkSection.SIZE,

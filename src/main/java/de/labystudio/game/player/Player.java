@@ -9,7 +9,7 @@ import java.util.List;
 
 public class Player {
 
-    private World world;
+    private final World world;
 
     public double prevX;
     public double prevY;
@@ -32,8 +32,8 @@ public class Player {
 
     public float jumpMovementFactor = 0.02F;
     protected float speedInAir = 0.02F;
-    private float flySpeed = 0.05F;
-    private float stepHeight = 0.5F;
+    private final float flySpeed = 0.05F;
+    private final float stepHeight = 0.5F;
 
     float moveForward;
     float moveStrafing;
@@ -53,11 +53,11 @@ public class Player {
 
     public Player(World world) {
         this.world = world;
-        resetPos();
+        this.resetPos();
     }
 
     private void resetPos() {
-        setPos(0, 76, 0);
+        this.setPos(0, 76, 0);
     }
 
     private void setPos(float x, float y, float z) {
@@ -84,7 +84,7 @@ public class Player {
         float prevMoveForward = this.moveForward;
         boolean prevJumping = this.jumping;
 
-        updateKeyboardInput();
+        this.updateKeyboardInput();
 
         // Toggle jumping
         if (!prevJumping && this.jumping) {
@@ -94,7 +94,7 @@ public class Player {
                 this.flying = !this.flying;
                 this.flyToggleTimer = 0;
 
-                updateFOVModifier();
+                this.updateFOVModifier();
             }
         }
 
@@ -106,7 +106,7 @@ public class Player {
                 this.sprinting = true;
                 this.sprintToggleTimer = 0;
 
-                updateFOVModifier();
+                this.updateFOVModifier();
             }
         }
 
@@ -139,7 +139,7 @@ public class Player {
 
         // Jump
         if (this.jumping) {
-            if (isInWater()) {
+            if (this.isInWater()) {
                 this.motionY += 0.03999999910593033D;
             } else if (this.onGround && this.jumpTicks == 0) {
                 this.jump();
@@ -153,14 +153,14 @@ public class Player {
         this.moveForward *= 0.98F;
 
         if (this.flying) {
-            travelFlying(this.moveForward, 0, this.moveStrafing);
+            this.travelFlying(this.moveForward, 0, this.moveStrafing);
         } else {
-            if (isInWater()) {
+            if (this.isInWater()) {
                 // Is inside of water
-                travelInWater(this.moveForward, 0, this.moveStrafing);
+                this.travelInWater(this.moveForward, 0, this.moveStrafing);
             } else {
                 // Is on land
-                travel(this.moveForward, 0, this.moveStrafing);
+                this.travel(this.moveForward, 0, this.moveStrafing);
             }
         }
 
@@ -172,17 +172,17 @@ public class Player {
             if (this.moveForward <= 0 || this.collision || this.sneaking) {
                 this.sprinting = false;
 
-                updateFOVModifier();
+                this.updateFOVModifier();
             }
         }
     }
 
     public boolean isInWater() {
-        return this.world.getBlockAt(getBlockPosX(), getBlockPosY(), getBlockPosZ()) == Block.WATER.getId();
+        return this.world.getBlockAt(this.getBlockPosX(), this.getBlockPosY(), this.getBlockPosZ()) == Block.WATER.getId();
     }
 
     public boolean isHeadInWater() {
-        return this.world.getBlockAt(getBlockPosX(), (int) (this.y + getEyeHeight() + 0.12), getBlockPosZ()) == Block.WATER.getId();
+        return this.world.getBlockAt(this.getBlockPosX(), (int) (this.y + this.getEyeHeight() + 0.12), this.getBlockPosZ()) == Block.WATER.getId();
     }
 
     protected void jump() {
@@ -211,7 +211,7 @@ public class Player {
         float prevJumpMovementFactor = this.jumpMovementFactor;
         this.jumpMovementFactor = this.flySpeed * (this.sprinting ? 2 : 1);
 
-        travel(forward, vertical, strafe);
+        this.travel(forward, vertical, strafe);
 
         this.motionY = prevMotionY * 0.6D;
         this.jumpMovementFactor = prevJumpMovementFactor;
@@ -226,7 +226,7 @@ public class Player {
         float friction = 0.02F;
 
         this.moveRelative(forward, vertical, strafe, friction);
-        this.collision = moveCollide(-this.motionX, this.motionY, -this.motionZ);
+        this.collision = this.moveCollide(-this.motionX, this.motionY, -this.motionZ);
 
         this.motionX *= slipperiness;
         this.motionY *= 0.800000011920929D;
@@ -235,7 +235,7 @@ public class Player {
     }
 
     public void travel(float forward, float vertical, float strafe) {
-        float prevSlipperiness = getBlockSlipperiness() * 0.91F;
+        float prevSlipperiness = this.getBlockSlipperiness() * 0.91F;
 
         float value = 0.16277136F / (prevSlipperiness * prevSlipperiness * prevSlipperiness);
         float friction;
@@ -249,10 +249,10 @@ public class Player {
         this.moveRelative(forward, vertical, strafe, friction);
 
         // Get new speed
-        float slipperiness = getBlockSlipperiness() * 0.91F;
+        float slipperiness = this.getBlockSlipperiness() * 0.91F;
 
         // Move
-        this.collision = moveCollide(-this.motionX, this.motionY, -this.motionZ);
+        this.collision = this.moveCollide(-this.motionX, this.motionY, -this.motionZ);
 
         // Gravity
         if (!this.flying) {
@@ -306,7 +306,7 @@ public class Player {
         boolean sneaking = false;
 
         if (Keyboard.isKeyDown(19)) { // R
-            resetPos();
+            this.resetPos();
         }
         if ((Keyboard.isKeyDown(200)) || (Keyboard.isKeyDown(17))) { // W
             moveForward++;
@@ -327,7 +327,7 @@ public class Player {
             if (this.moveForward > 0 && !this.sneaking && !this.sprinting && this.motionX != 0 && this.motionZ != 0) {
                 this.sprinting = true;
 
-                updateFOVModifier();
+                this.updateFOVModifier();
             }
         }
         if (Keyboard.isKeyDown(16)) { // Q
@@ -451,7 +451,7 @@ public class Player {
             value *= 1.1F;
         }
 
-        setFOVModifier((value - 1.0F) * 10F);
+        this.setFOVModifier((value - 1.0F) * 10F);
     }
 
     public void setFOVModifier(float fov) {

@@ -13,12 +13,12 @@ import java.util.List;
 
 public class WorldFormat {
 
-    private World world;
+    private final World world;
 
-    private File worldDirectory;
-    private File regionDirectory;
+    private final File worldDirectory;
+    private final File regionDirectory;
 
-    private String name;
+    private final String name;
 
     public WorldFormat(World world, File worldDirectory) {
         this.world = world;
@@ -123,7 +123,7 @@ public class WorldFormat {
             int regionZ = (int) (long) regionId;
 
             // Get region file
-            RegionFormat region = getRegion(regionX, regionZ);
+            RegionFormat region = this.getRegion(regionX, regionZ);
 
             // Relative offset
             for (int x = 0; x < 32; x++) {

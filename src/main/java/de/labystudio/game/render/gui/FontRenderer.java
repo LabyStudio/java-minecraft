@@ -10,10 +10,10 @@ import java.io.IOException;
 
 public class FontRenderer {
 
-    private static int BITMAP_SIZE = 16;
-    private static int FIELD_SIZE = 8;
+    private static final int BITMAP_SIZE = 16;
+    private static final int FIELD_SIZE = 8;
 
-    private static String COLOR_CODE_INDEX_LOOKUP = "0123456789abcdef";
+    private static final String COLOR_CODE_INDEX_LOOKUP = "0123456789abcdef";
 
     private final GuiRenderer gui;
     private final Tessellator tessellator = Tessellator.instance;
@@ -28,7 +28,7 @@ public class FontRenderer {
 
         // Calculate character width
         for (int i = 0; i < 128; i++) {
-            this.charWidths[i] = calculateCharacterWidthAt(bitMap, i % BITMAP_SIZE, i / BITMAP_SIZE) + 2;
+            this.charWidths[i] = this.calculateCharacterWidthAt(bitMap, i % BITMAP_SIZE, i / BITMAP_SIZE) + 2;
         }
 
         // Load texture
@@ -54,16 +54,16 @@ public class FontRenderer {
     }
 
     public void drawString(String string, int x, int y) {
-        drawString(string, x, y, -1);
+        this.drawString(string, x, y, -1);
     }
 
     public void drawString(String string, int x, int y, int color) {
-        drawStringRaw(string, x + 1, y + 1, color, true);
-        drawStringRaw(string, x, y, color, false);
+        this.drawStringRaw(string, x + 1, y + 1, color, true);
+        this.drawStringRaw(string, x, y, color, false);
     }
 
     public void drawStringWithoutShadow(String string, int x, int y, int color) {
-        drawStringRaw(string, x, y, color, false);
+        this.drawStringRaw(string, x, y, color, false);
     }
 
     private void drawStringRaw(String string, int x, int y, int color, boolean isShadow) {
@@ -73,7 +73,7 @@ public class FontRenderer {
 
         // Start rendering
         this.tessellator.startDrawingQuads();
-        setColor(color, isShadow);
+        this.setColor(color, isShadow);
 
         char[] chars = string.toCharArray();
 
@@ -87,7 +87,7 @@ public class FontRenderer {
                 char nextCharacter = chars[i + 1];
 
                 // Change color of string
-                setColor(getColorOfCharacter(nextCharacter), isShadow);
+                this.setColor(this.getColorOfCharacter(nextCharacter), isShadow);
 
                 // Skip the color code for rendering
                 i += 1;
@@ -99,7 +99,7 @@ public class FontRenderer {
             int textureOffsetY = chars[i] / BITMAP_SIZE * FIELD_SIZE;
 
             // Draw character
-            this.gui.drawTexturedModalRect(tessellator, x, y,
+            this.gui.drawTexturedModalRect(this.tessellator, x, y,
                     textureOffsetX, textureOffsetY,
                     FIELD_SIZE, FIELD_SIZE,
                     FIELD_SIZE, FIELD_SIZE,
