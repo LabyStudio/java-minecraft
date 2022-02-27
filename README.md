@@ -4,6 +4,8 @@ This is a sandbox that provides all basic features of Minecraft.<br>
 The main purpose of this project is to understand the render and physics engine of Minecraft.<br>
 It is a fork of the [first version](https://github.com/thecodeofnotch/rd-131655) of Minecraft.
 
+This project was ported to javascript here: [js-minecraft](https://github.com/LabyStudio/js-minecraft).
+
 ### Feature Overview
 - Block rendering
 - Block collision
@@ -65,3 +67,7 @@ R: Return to spawn
 - Multiplayer
 - Entity rendering
 - Loading screen
+
+<hr>
+
+NOT OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG.
