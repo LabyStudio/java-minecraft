@@ -37,31 +37,13 @@ public class World implements IWorldAccess {
         if (this.format.exists()) {
             // Load chunks
             this.format.load((x, z, array) -> {
-                Chunk chunk = this.getChunkAt(x, z);
+                Chunk chunk = this.getChunkOrLoadAt(x, z, false);
                 chunk.setSections(array);
                 chunk.queueForRebuild();
             });
-
-            this.updateLightning = true;
-        } else {
-            int radius = 20;
-
-            // Generator new spawn chunks
-            for (int x = -radius; x <= radius; x++) {
-                for (int z = -radius; z <= radius; z++) {
-                    this.generator.generateChunk(x, z);
-                }
-            }
-
-            // Populate trees
-            for (int x = -radius; x <= radius; x++) {
-                for (int z = -radius; z <= radius; z++) {
-                    this.generator.populateChunk(x, z);
-                }
-            }
-
-            this.updateLightning = true;
         }
+
+        // this.updateLightning = true; // TODO improve performance
     }
 
     public void save() {
@@ -138,13 +120,19 @@ public class World implements IWorldAccess {
         for (int x = minX; x <= maxX; x++) {
             for (int y = minY; y <= maxY; y++) {
                 for (int z = minZ; z <= maxZ; z++) {
-                    this.getChunkAt(x, y, z).queueForRebuild();
+                    if (this.isChunkLoaded(x, z)) {
+                        this.getChunkAt(x, y, z).queueForRebuild();
+                    }
                 }
             }
         }
     }
 
     public void setBlockAt(int x, int y, int z, int type) {
+        if (!this.isChunkLoadedAt(x, y, z)) {
+            return;
+        }
+
         ChunkSection chunkSection = this.getChunkAtBlock(x, y, z);
         if (chunkSection != null) {
             chunkSection.setBlockAt(x & 15, y & 15, z & 15, type);
@@ -167,7 +155,9 @@ public class World implements IWorldAccess {
         // Update block lights below the target block and the surrounding blocks
         for (int offsetX = -1; offsetX <= 1; offsetX++) {
             for (int offsetZ = -1; offsetZ <= 1; offsetZ++) {
-                this.updateBlockLightsAtXZ(x + offsetX, z + offsetZ);
+                if (this.isChunkLoaded((x + offsetX) << 4, (z + offsetZ) << 4)) {
+                    this.updateBlockLightsAtXZ(x + offsetX, z + offsetZ);
+                }
             }
         }
     }
@@ -269,17 +259,29 @@ public class World implements IWorldAccess {
     }
 
     public boolean isSolidBlockAt(int x, int y, int z) {
+        if (!this.isChunkLoadedAt(x, y, z)) {
+            return false;
+        }
+
         short typeId = this.getBlockAt(x, y, z);
         return typeId != 0 && Block.getById(typeId).isSolid();
     }
 
     public boolean isTransparentBlockAt(int x, int y, int z) {
+        if (!this.isChunkLoadedAt(x, y, z)) {
+            return false;
+        }
+
         short typeId = this.getBlockAt(x, y, z);
         return typeId == 0 || Block.getById(typeId).isTransparent();
     }
 
     @Override
     public short getBlockAt(int x, int y, int z) {
+        if (!this.isChunkLoadedAt(x, y, z)) {
+            return 0;
+        }
+
         ChunkSection chunkSection = this.getChunkAtBlock(x, y, z);
         return chunkSection == null ? 0 : chunkSection.getBlockAt(x & 15, y & 15, z & 15);
     }
@@ -290,14 +292,25 @@ public class World implements IWorldAccess {
 
     public Chunk getChunkAt(int x, int z) {
         long chunkIndex = Chunk.getIndex(x, z);
-        Chunk chunk = this.chunks.get(chunkIndex);
+        return this.chunks.get(chunkIndex);
+    }
+
+    public Chunk getChunkOrLoadAt(int x, int z, boolean generateTerrain) {
+        Chunk chunk = this.getChunkAt(x, z);
         if (chunk == null) {
             chunk = new Chunk(this, x, z);
 
             // Copy map because of ConcurrentModificationException
             Map<Long, Chunk> chunks = new HashMap<>(this.chunks);
+            long chunkIndex = Chunk.getIndex(x, z);
             chunks.put(chunkIndex, chunk);
             this.chunks = chunks;
+
+            // Generate terrain
+            if (generateTerrain) {
+                this.generator.generateChunk(x, z);
+                this.generator.populateChunk(x, z);
+            }
         }
         return chunk;
     }

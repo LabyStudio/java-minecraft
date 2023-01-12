@@ -3,7 +3,11 @@ package de.labystudio.game;
 import de.labystudio.game.player.Player;
 import de.labystudio.game.render.gui.FontRenderer;
 import de.labystudio.game.render.gui.GuiRenderer;
-import de.labystudio.game.util.*;
+import de.labystudio.game.util.BoundingBox;
+import de.labystudio.game.util.EnumBlockFace;
+import de.labystudio.game.util.EnumWorldBlockLayer;
+import de.labystudio.game.util.HitResult;
+import de.labystudio.game.util.Timer;
 import de.labystudio.game.world.World;
 import de.labystudio.game.world.WorldRenderer;
 import de.labystudio.game.world.block.Block;
@@ -122,7 +126,10 @@ public class Minecraft implements Runnable {
     public void tick() {
         this.player.onTick();
         this.world.onTick();
-        this.worldRenderer.onTick();
+
+        int cameraChunkX = (int) this.player.x >> 4;
+        int cameraChunkZ = (int) this.player.z >> 4;
+        this.worldRenderer.onTick(cameraChunkX, cameraChunkZ);
     }
 
     private void moveCameraToPlayer(float partialTicks) {

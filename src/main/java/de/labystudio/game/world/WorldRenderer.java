@@ -61,8 +61,14 @@ public class WorldRenderer {
         }
     }
 
-    public void onTick() {
-
+    public void onTick(int cameraChunkX, int cameraChunkZ) {
+        for (int relX = -RENDER_DISTANCE; relX <= RENDER_DISTANCE; relX++) {
+            for (int relZ = -RENDER_DISTANCE; relZ <= RENDER_DISTANCE; relZ++) {
+                if (!this.world.isChunkLoaded(cameraChunkX + relX, cameraChunkZ + relZ)) {
+                    this.world.getChunkOrLoadAt(cameraChunkX + relX, cameraChunkZ + relZ, true);
+                }
+            }
+        }
     }
 
     public void render(int cameraChunkX, int cameraChunkZ, EnumWorldBlockLayer renderLayer) {
